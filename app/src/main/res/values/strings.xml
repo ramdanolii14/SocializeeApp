@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Socializee</string>
+    <string name="btn_login">Masuk</string>
+    <string name="btn_register">Daftar</string>
+    <string name="btn_follow">Ikuti</string>
+    <string name="btn_following">Diikuti</string>
+    <string name="btn_post">Posting</string>
+    <string name="hint_search">Cari pengguna…</string>
+    <string name="label_feed">Beranda</string>
+    <string name="label_explore">Jelajah</string>
+    <string name="label_profile">Profil</string>
+    <string name="empty_feed">Belum ada postingan.\nIkuti pengguna lain!</string>
+    <string name="empty_comments">Belum ada komentar.</string>
+    <string name="error_network">Gagal terhubung ke server</string>
+    <string name="provider_authority">com.nyantadev.socializee.provider</string>
+</resources>

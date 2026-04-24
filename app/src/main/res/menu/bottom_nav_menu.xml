@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/feedFragment"
+        android:icon="@drawable/ic_home"
+        android:title="Beranda"/>
+
+    <item
+        android:id="@+id/exploreFragment"
+        android:icon="@drawable/ic_search"
+        android:title="Jelajah"/>
+
+    <item
+        android:id="@+id/profileSelfFragment"
+        android:icon="@drawable/ic_person"
+        android:title="Profil"/>
+
+</menu>

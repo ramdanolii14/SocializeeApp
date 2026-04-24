@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="80dp" android:height="80dp"
+    android:viewportWidth="100" android:viewportHeight="100">
+    <!-- Background circle -->
+    <path android:fillColor="#000000"
+        android:pathData="M50,0 a50,50 0 1,0 0.001,0 Z"/>
+    <!-- Thread icon shape -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M62,32 C62,32 55,28 46,30 C38,32 32,40 34,50 C36,58 44,62 52,60 C60,58 66,50 64,42 C62,36 56,33 50,34 C44,35 40,40 42,46 C43,50 47,52 51,51"/>
+    <path android:fillColor="#FFFFFF"
+        android:strokeWidth="3.5"
+        android:strokeColor="#FFFFFF"
+        android:pathData="M50,51 L50,70"/>
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M44,67 C44,67 47,72 50,70 C53,72 56,67 56,67"/>
+</vector>
