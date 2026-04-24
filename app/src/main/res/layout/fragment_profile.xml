@@ -14,24 +14,26 @@
         android:background="@color/surface"
         android:gravity="center_vertical"
         android:paddingStart="4dp"
-        android:paddingEnd="16dp">
+        android:paddingEnd="8dp">
 
         <ImageView
             android:id="@+id/ivBack"
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:src="@drawable/ic_back"
-            android:padding="10dp"/>
+            android:padding="10dp"
+            android:contentDescription="Kembali"/>
 
         <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1"/>
 
         <ImageView
             android:id="@+id/ivLogoutIcon"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:src="@drawable/ic_logout"
-            android:padding="8dp"
-            android:visibility="gone"/>
+            android:padding="10dp"
+            android:visibility="visible"
+            android:contentDescription="Logout"/>
     </LinearLayout>
 
     <ProgressBar
@@ -50,8 +52,7 @@
             android:id="@+id/contentContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="visible">
+            android:orientation="vertical">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -65,22 +66,19 @@
                     android:layout_width="80dp"
                     android:layout_height="80dp"
                     android:src="@drawable/ic_default_avatar"
-                    android:background="@drawable/circle_bg"
-                    android:scaleType="centerCrop"
-                    android:clickable="true"
-                    android:focusable="true"/>
+                    android:scaleType="centerCrop"/>
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="horizontal"
-                    android:gravity="space_evenly"
                     android:layout_marginStart="16dp">
 
                     <LinearLayout
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:orientation="vertical"
                         android:gravity="center">
                         <TextView
@@ -89,7 +87,7 @@
                             android:layout_height="wrap_content"
                             android:text="0"
                             android:textStyle="bold"
-                            android:textSize="16sp"
+                            android:textSize="18sp"
                             android:textColor="@color/text_primary"/>
                         <TextView
                             android:layout_width="wrap_content"
@@ -100,8 +98,9 @@
                     </LinearLayout>
 
                     <LinearLayout
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:orientation="vertical"
                         android:gravity="center">
                         <TextView
@@ -110,7 +109,7 @@
                             android:layout_height="wrap_content"
                             android:text="0"
                             android:textStyle="bold"
-                            android:textSize="16sp"
+                            android:textSize="18sp"
                             android:textColor="@color/text_primary"/>
                         <TextView
                             android:layout_width="wrap_content"
@@ -121,8 +120,9 @@
                     </LinearLayout>
 
                     <LinearLayout
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:orientation="vertical"
                         android:gravity="center">
                         <TextView
@@ -131,7 +131,7 @@
                             android:layout_height="wrap_content"
                             android:text="0"
                             android:textStyle="bold"
-                            android:textSize="16sp"
+                            android:textSize="18sp"
                             android:textColor="@color/text_primary"/>
                         <TextView
                             android:layout_width="wrap_content"
@@ -147,7 +147,7 @@
                 android:id="@+id/tvDisplayName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Display Name"
+                android:text="Nama Pengguna"
                 android:textStyle="bold"
                 android:textSize="16sp"
                 android:textColor="@color/text_primary"
@@ -169,7 +169,7 @@
                 android:id="@+id/tvBio"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Bio here..."
+                android:text="Bio..."
                 android:textSize="14sp"
                 android:textColor="@color/text_primary"
                 android:layout_marginStart="16dp"
@@ -180,36 +180,22 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="16dp"
-                android:gravity="center_vertical">
+                android:padding="16dp">
 
                 <Button
                     android:id="@+id/btnFollow"
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="40dp"
-                    android:layout_weight="1"
                     android:text="Ikuti"
                     android:visibility="gone"/>
 
                 <Button
                     android:id="@+id/btnEditProfile"
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="40dp"
-                    android:layout_weight="1"
                     android:text="Edit Profil"
-                    android:textColor="@color/text_primary"
-                    android:visibility="visible"/>
-
-                <Button
-                    android:id="@+id/btnLogout"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:text="Logout"
-                    android:textColor="#F44336"
-                    android:layout_marginStart="8dp"
-                    android:visibility="visible"/>
+                    android:textColor="@color/text_primary"/>
             </LinearLayout>
 
             <LinearLayout
@@ -217,21 +203,28 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="16dp"
+                android:padding="16dp"
                 android:visibility="gone"
                 android:background="#0A000000">
 
                 <TextView
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="* Ketuk foto profil di atas untuk mengganti avatar"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorPrimary"
-                    android:layout_marginBottom="12dp"
-                    android:textAlignment="center"
-                    android:textStyle="italic"/>
+                    android:text="Ubah Foto Profil"
+                    android:textStyle="bold"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="8dp"/>
+
+                <ImageView
+                    android:id="@+id/ivEditAvatar"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:layout_gravity="center_horizontal"
+                    android:src="@drawable/ic_default_avatar"
+                    android:scaleType="centerCrop"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:layout_marginBottom="16dp"/>
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
@@ -239,13 +232,11 @@
                     android:hint="Nama Tampilan"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_marginBottom="12dp">
-
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etDisplayName"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="textPersonName"
-                        android:maxLines="1"/>
+                        android:inputType="textPersonName"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -254,14 +245,12 @@
                     android:hint="Bio"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_marginBottom="16dp">
-
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etBio"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="textMultiLine"
-                        android:minLines="2"
-                        android:maxLines="4"/>
+                        android:minLines="2"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <Button
@@ -277,32 +266,13 @@
                 android:background="@color/divider"
                 android:layout_marginTop="8dp"/>
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Thread"
-                android:textStyle="bold"
-                android:textSize="15sp"
-                android:textColor="@color/text_primary"
-                android:padding="16dp"/>
-
-            <TextView
-                android:id="@+id/tvNoPosts"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Belum ada postingan"
-                android:textColor="@color/text_secondary"
-                android:gravity="center"
-                android:padding="32dp"
-                android:visibility="gone"/>
-
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvPosts"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"/>
+                android:nestedScrollingEnabled="false"
+                android:layout_marginTop="8dp"/>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-
 </LinearLayout>

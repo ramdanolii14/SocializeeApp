@@ -43,17 +43,17 @@ class ProfileFragment : Fragment() {
     private var isOwnProfile = false
     private var selectedAvatarFile: File? = null
 
-    // ---- Avatar picker: use system photo picker ----
+    // ---- Avatar picker ----
     private val avatarPickerLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
             uri ?: return@registerForActivityResult
             selectedAvatarFile = copyUriToTempFile(uri)
             if (selectedAvatarFile != null) {
-                // Tampilkan gambar yang dipilih secara lokal sebelum diupload
+                // Tampilkan gambar yang dipilih di ImageView Edit (ivEditAvatar)
                 Glide.with(this)
                     .load(uri)
                     .circleCrop()
-                    .into(binding.ivAvatar)
+                    .into(binding.ivEditAvatar)
             } else {
                 Toast.makeText(context, "Gagal memproses gambar", Toast.LENGTH_SHORT).show()
             }
@@ -113,13 +113,18 @@ class ProfileFragment : Fragment() {
     private fun setupUI() {
         binding.btnFollow.visibility = if (isOwnProfile) View.GONE else View.VISIBLE
         binding.btnEditProfile.visibility = if (isOwnProfile) View.VISIBLE else View.GONE
-        binding.btnLogout.visibility = if (isOwnProfile) View.VISIBLE else View.GONE
         binding.ivBack.visibility = if (isOwnProfile) View.GONE else View.VISIBLE
 
-        binding.ivBack.setOnClickListener { findNavController().navigateUp() }
-        binding.btnLogout.setOnClickListener { (activity as? MainActivity)?.logout() }
+        // Fix: Menggunakan ivLogoutIcon sesuai XML terbaru
+        binding.ivLogoutIcon.visibility = if (isOwnProfile) View.VISIBLE else View.GONE
 
-        binding.ivAvatar.setOnClickListener {
+        binding.ivBack.setOnClickListener { findNavController().navigateUp() }
+
+        // Fix: Menggunakan ivLogoutIcon
+        binding.ivLogoutIcon.setOnClickListener { (activity as? MainActivity)?.logout() }
+
+        // Fix: Listener pindah ke ivEditAvatar (didalam editContainer)
+        binding.ivEditAvatar.setOnClickListener {
             if (isOwnProfile) {
                 avatarPickerLauncher.launch("image/*")
             }
@@ -142,7 +147,6 @@ class ProfileFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            // Panggil API Update
             authViewModel.updateProfile(name, bio, selectedAvatarFile)
         }
     }
@@ -152,7 +156,7 @@ class ProfileFragment : Fragment() {
         if (isEditing) {
             binding.editContainer.visibility = View.GONE
             binding.btnEditProfile.text = "Edit Profil"
-            selectedAvatarFile = null // Reset file jika batal edit
+            selectedAvatarFile = null
         } else {
             binding.editContainer.visibility = View.VISIBLE
             binding.btnEditProfile.text = "Batal"
@@ -188,22 +192,33 @@ class ProfileFragment : Fragment() {
                     binding.tvUsername.text = "@${user.username}"
                     binding.tvBio.text = user.bio
                     binding.tvBio.visibility = if (user.bio.isBlank()) View.GONE else View.VISIBLE
-                    binding.tvFollowers.text = "${user.followersCount} Pengikut"
-                    binding.tvFollowing.text = "${user.followingCount} Mengikuti"
-                    binding.tvPostsCount.text = "${user.postsCount} Post"
 
-                    // Glide Null & Blank Safety Fix
+                    // Update: Hanya isi angka karena label sudah ada di XML
+                    binding.tvPostsCount.text = user.postsCount.toString()
+                    binding.tvFollowers.text = user.followersCount.toString()
+                    binding.tvFollowing.text = user.followingCount.toString()
+
                     val avatarUrl = user.avatarUrl
                     if (!avatarUrl.isNullOrBlank()) {
+                        // Load ke avatar utama
                         Glide.with(this@ProfileFragment)
                             .load(avatarUrl)
                             .placeholder(R.drawable.ic_default_avatar)
                             .error(R.drawable.ic_default_avatar)
                             .circleCrop()
-                            .diskCacheStrategy(DiskCacheStrategy.ALL) // Pastikan ter-cache dengan baik
+                            .diskCacheStrategy(DiskCacheStrategy.ALL)
                             .into(binding.ivAvatar)
+
+                        // Load ke avatar yang ada di form edit
+                        Glide.with(this@ProfileFragment)
+                            .load(avatarUrl)
+                            .placeholder(R.drawable.ic_default_avatar)
+                            .circleCrop()
+                            .diskCacheStrategy(DiskCacheStrategy.ALL)
+                            .into(binding.ivEditAvatar)
                     } else {
                         binding.ivAvatar.setImageResource(R.drawable.ic_default_avatar)
+                        binding.ivEditAvatar.setImageResource(R.drawable.ic_default_avatar)
                     }
 
                     binding.etDisplayName.setText(user.displayName)
@@ -213,8 +228,8 @@ class ProfileFragment : Fragment() {
                     binding.btnFollow.isSelected = user.isFollowing
 
                     postAdapter.submitList(state.posts)
-                    binding.tvNoPosts.visibility =
-                        if (state.posts.isEmpty()) View.VISIBLE else View.GONE
+
+                    // Fix: tvNoPosts dihapus karena tidak ada di XML terbaru
                 }
                 is ProfileState.Error -> {
                     binding.progressBar.visibility = View.GONE
@@ -226,28 +241,21 @@ class ProfileFragment : Fragment() {
         profileViewModel.followState.observe(viewLifecycleOwner) { (following, count) ->
             binding.btnFollow.text = if (following) "Diikuti" else "Ikuti"
             binding.btnFollow.isSelected = following
-            binding.tvFollowers.text = "$count Pengikut"
+            binding.tvFollowers.text = count.toString()
         }
 
-        // Observasi status update profil
         authViewModel.profileState.observe(viewLifecycleOwner) { state ->
             when (state) {
                 is ProfileUpdateState.Loading -> binding.progressBar.visibility = View.VISIBLE
                 is ProfileUpdateState.Success -> {
                     binding.progressBar.visibility = View.GONE
-
-                    // Reset file temp setelah sukses
                     selectedAvatarFile = null
-
-                    // Simpan data terbaru ke session manager agar tetap sinkron
                     sessionManager.saveUser(state.user)
 
                     binding.editContainer.visibility = View.GONE
                     binding.btnEditProfile.text = "Edit Profil"
 
-                    // Load ulang data dari server untuk me-refresh tampilan UI secara penuh
                     profileViewModel.loadProfile(targetUserId!!)
-
                     Toast.makeText(context, "Profil diperbarui!", Toast.LENGTH_SHORT).show()
                 }
                 is ProfileUpdateState.Error -> {
