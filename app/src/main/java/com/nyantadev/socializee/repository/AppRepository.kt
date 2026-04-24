@@ -40,10 +40,22 @@ class AppRepository(private val api: ApiService) {
 
     suspend fun createPost(content: String, imageFiles: List<File>): Response<PostResponse> {
         val contentPart = content.toRequestBody("text/plain".toMediaTypeOrNull())
-        val imageParts = imageFiles.map { file ->
-            MultipartBody.Part.createFormData("images", file.name, file.toMediaTypedRequestBody())
-        }
-        return api.createPost(contentPart, imageParts)
+
+        val videoExtensions = setOf("mp4", "mov", "avi", "mkv", "3gp", "wmv", "flv")
+
+        val imageParts = imageFiles
+            .filter { it.extension.lowercase() !in videoExtensions }
+            .map { file ->
+                MultipartBody.Part.createFormData("images", file.name, file.toMediaTypedRequestBody())
+            }
+
+        val videoParts = imageFiles
+            .filter { it.extension.lowercase() in videoExtensions }
+            .map { file ->
+                MultipartBody.Part.createFormData("videos", file.name, file.toMediaTypedRequestBody())
+            }
+
+        return api.createPost(contentPart, imageParts, videoParts)
     }
 
     suspend fun deletePost(id: String) = api.deletePost(id)

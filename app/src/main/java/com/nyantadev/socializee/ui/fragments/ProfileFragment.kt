@@ -15,7 +15,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
-import com.github.dhaval2404.imagepicker.ImagePicker
 import com.nyantadev.socializee.R
 import com.nyantadev.socializee.api.RetrofitClient
 import com.nyantadev.socializee.databinding.FragmentProfileBinding
@@ -46,40 +45,28 @@ class ProfileFragment : Fragment() {
     private var isOwnProfile = false
     private var selectedAvatarFile: File? = null
 
-    private val avatarPickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val uri = result.data?.data ?: return@registerForActivityResult
-            // Copy URI ke file sementara dengan ekstensi yang benar dari MIME type
+    // ---- Avatar picker: use system photo picker (no crop lib needed) ----
+    private val avatarPickerLauncher =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            uri ?: return@registerForActivityResult
             selectedAvatarFile = copyUriToTempFile(uri)
-            Glide.with(this).load(uri).circleCrop().into(binding.ivAvatar)
+            if (selectedAvatarFile != null) {
+                Glide.with(this).load(uri).circleCrop().into(binding.ivAvatar)
+            } else {
+                Toast.makeText(context, "Gagal memproses gambar", Toast.LENGTH_SHORT).show()
+            }
         }
-    }
 
-    /**
-     * Copy URI ke file sementara.
-     * Ekstensi file ditentukan dari MIME type via ContentResolver agar
-     * backend multer bisa mengenali tipe file dengan benar.
-     */
     private fun copyUriToTempFile(uri: Uri): File? {
         return try {
             val context = requireContext()
-
-            // Deteksi MIME type dari ContentResolver (lebih akurat daripada nama file)
             val mimeType = context.contentResolver.getType(uri)
             val ext = when (mimeType) {
-                "image/jpeg" -> ".jpg"
-                "image/jpg"  -> ".jpg"
                 "image/png"  -> ".png"
-                "image/gif"  -> ".gif"
                 "image/webp" -> ".webp"
-                "image/bmp"  -> ".bmp"
-                else -> {
-                    // Fallback: ambil dari nama file asli
-                    val fileName = getFileName(context, uri)
-                    if (fileName.contains(".")) ".${fileName.substringAfterLast(".")}" else ".jpg"
-                }
+                "image/gif"  -> ".gif"
+                else         -> ".jpg"
             }
-
             val tempFile = File(context.cacheDir, "avatar_${System.currentTimeMillis()}$ext")
             context.contentResolver.openInputStream(uri)?.use { input ->
                 FileOutputStream(tempFile).use { output ->
@@ -92,18 +79,11 @@ class ProfileFragment : Fragment() {
         }
     }
 
-    private fun getFileName(context: Context, uri: Uri): String {
-        var name = "file.jpg"
-        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            if (cursor.moveToFirst() && idx >= 0) {
-                name = cursor.getString(idx)
-            }
-        }
-        return name
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         _binding = FragmentProfileBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -137,7 +117,10 @@ class ProfileFragment : Fragment() {
         binding.btnLogout.setOnClickListener { (activity as? MainActivity)?.logout() }
 
         binding.ivAvatar.setOnClickListener {
-            if (isOwnProfile) pickAvatar()
+            if (isOwnProfile) {
+                // Launch system image picker directly
+                avatarPickerLauncher.launch("image/*")
+            }
         }
 
         binding.btnFollow.setOnClickListener {
@@ -164,18 +147,12 @@ class ProfileFragment : Fragment() {
         if (isEditing) {
             binding.editContainer.visibility = View.GONE
             binding.btnEditProfile.text = "Edit Profil"
+            // Reset selected avatar file if cancelled
+            selectedAvatarFile = null
         } else {
             binding.editContainer.visibility = View.VISIBLE
             binding.btnEditProfile.text = "Batal"
         }
-    }
-
-    private fun pickAvatar() {
-        ImagePicker.with(this)
-            .cropSquare()
-            .compress(512)
-            .maxResultSize(512, 512)
-            .createIntent { avatarPickerLauncher.launch(it) }
     }
 
     private fun setupRecyclerView() {
@@ -223,7 +200,8 @@ class ProfileFragment : Fragment() {
                     binding.btnFollow.isSelected = user.isFollowing
 
                     postAdapter.submitList(state.posts)
-                    binding.tvNoPosts.visibility = if (state.posts.isEmpty()) View.VISIBLE else View.GONE
+                    binding.tvNoPosts.visibility =
+                        if (state.posts.isEmpty()) View.VISIBLE else View.GONE
                 }
                 is ProfileState.Error -> {
                     binding.progressBar.visibility = View.GONE
@@ -243,8 +221,11 @@ class ProfileFragment : Fragment() {
                 is ProfileUpdateState.Loading -> binding.progressBar.visibility = View.VISIBLE
                 is ProfileUpdateState.Success -> {
                     binding.progressBar.visibility = View.GONE
+                    selectedAvatarFile = null
                     sessionManager.saveUser(state.user)
-                    toggleEditMode()
+                    // Close edit mode properly
+                    binding.editContainer.visibility = View.GONE
+                    binding.btnEditProfile.text = "Edit Profil"
                     profileViewModel.loadProfile(targetUserId!!)
                     Toast.makeText(context, "Profil diperbarui!", Toast.LENGTH_SHORT).show()
                 }
@@ -258,15 +239,53 @@ class ProfileFragment : Fragment() {
 
     private fun openComments(post: Post) {
         val bundle = Bundle().apply { putString("postId", post.id) }
-        findNavController().navigate(R.id.action_profile_to_comments, bundle)
+        // Use correct action depending on which nav destination we are
+        val actionId = if (isOwnProfile) {
+            R.id.action_profileSelf_to_comments
+        } else {
+            R.id.action_profile_to_comments
+        }
+        try {
+            findNavController().navigate(actionId, bundle)
+        } catch (e: IllegalArgumentException) {
+            // Fallback: try the other action
+            try {
+                val fallback = if (isOwnProfile)
+                    R.id.action_profile_to_comments
+                else
+                    R.id.action_profileSelf_to_comments
+                findNavController().navigate(fallback, bundle)
+            } catch (e2: Exception) {
+                Toast.makeText(context, "Tidak bisa membuka komentar", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun openImageViewer(urls: List<String>, startIndex: Int) {
         val bundle = Bundle().apply {
-            putStringArrayList("urls", ArrayList(urls))
+            putStringArray("urls", urls.toTypedArray())
             putInt("startIndex", startIndex)
         }
-        findNavController().navigate(R.id.action_profile_to_imageViewer, bundle)
+        // Use correct action depending on which nav destination we are
+        val actionId = if (isOwnProfile) {
+            R.id.action_profileSelf_to_imageViewer
+        } else {
+            R.id.action_profile_to_imageViewer
+        }
+        try {
+            findNavController().navigate(actionId, bundle)
+        } catch (e: IllegalArgumentException) {
+            // Fallback
+            try {
+                val fallback = if (isOwnProfile)
+                    R.id.action_profile_to_imageViewer
+                else
+                    R.id.action_profileSelf_to_imageViewer
+                findNavController().navigate(fallback, bundle)
+            } catch (e2: Exception) {
+                Toast.makeText(context, "Tidak bisa membuka gambar", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     override fun onDestroyView() {

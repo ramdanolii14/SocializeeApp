@@ -143,16 +143,31 @@ class PostAdapter(
         }
 
         private fun buildImageView(url: String, lp: LinearLayout.LayoutParams, cornerPx: Int, onClick: () -> Unit): ImageView {
+            val isVideo = isVideoUrl(url)
             return ImageView(binding.root.context).apply {
                 layoutParams = lp
                 scaleType = ImageView.ScaleType.CENTER_CROP
-                Glide.with(context)
-                    .load(url)
-                    .transform(RoundedCorners(cornerPx))
-                    .placeholder(R.drawable.ic_image_placeholder)
-                    .into(this)
+                if (isVideo) {
+                    // Video: show placeholder with play icon — Glide can't decode video frames reliably
+                    setImageResource(R.drawable.ic_image_placeholder)
+                    setColorFilter(binding.root.context.getColor(R.color.text_secondary))
+                    // Overlay play icon via foreground (API 23+)
+                    foreground = binding.root.context.getDrawable(android.R.drawable.ic_media_play)
+                } else {
+                    Glide.with(context)
+                        .load(url)
+                        .transform(RoundedCorners(cornerPx))
+                        .placeholder(R.drawable.ic_image_placeholder)
+                        .into(this)
+                }
                 setOnClickListener { onClick() }
             }
+        }
+
+        private fun isVideoUrl(url: String): Boolean {
+            val path = url.substringBefore("?").lowercase()
+            return path.endsWith(".mp4") || path.endsWith(".mov") || path.endsWith(".avi") ||
+                    path.endsWith(".mkv") || path.endsWith(".3gp") || path.contains("/videos/")
         }
     }
 

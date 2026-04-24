@@ -125,7 +125,7 @@ class FeedFragment : Fragment() {
 
     private fun openImageViewer(urls: List<String>, startIndex: Int) {
         val bundle = Bundle().apply {
-            putStringArrayList("urls", ArrayList(urls))
+            putStringArray("urls", urls.toTypedArray())
             putInt("startIndex", startIndex)
         }
         findNavController().navigate(R.id.action_feed_to_imageViewer, bundle)

@@ -30,13 +30,13 @@ interface ApiService {
     @GET("posts/feed")
     suspend fun getFeed(
         @Query("page") page: Int = 1,
-        @Query("limit") limit: Int = 20
+        @Query("limit") limit: Int = 50
     ): Response<PostsResponse>
 
     @GET("posts/explore")
     suspend fun getExplore(
         @Query("page") page: Int = 1,
-        @Query("limit") limit: Int = 20
+        @Query("limit") limit: Int = 50
     ): Response<PostsResponse>
 
     @GET("posts/user/{userId}")
@@ -49,7 +49,8 @@ interface ApiService {
     @POST("posts")
     suspend fun createPost(
         @Part("content") content: RequestBody,
-        @Part images: List<MultipartBody.Part>
+        @Part images: List<MultipartBody.Part>,
+        @Part videos: List<MultipartBody.Part>
     ): Response<PostResponse>
 
     @DELETE("posts/{id}")

@@ -15,6 +15,8 @@ object RetrofitClient {
 
     fun init(sessionManager: SessionManager) {
         this.sessionManager = sessionManager
+        // Rebuild retrofit so the new session's token is picked up immediately
+        retrofit = null
     }
 
     private fun getClient(): OkHttpClient {
