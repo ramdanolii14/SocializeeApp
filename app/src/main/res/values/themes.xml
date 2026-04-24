@@ -19,7 +19,7 @@
         <item name="android:textAllCaps">false</item>
         <item name="android:letterSpacing">0</item>
     </style>
-    <style name="Widget.MaterialComponents.Button.OutlinedButton" parent="Widget.MaterialComponents.Button.OutlinedButton">
+    <style name="Widget.MaterialComponents.Button.OutlinedButton" parent="Widget.MaterialComponents.Button.TextButton.Dialog.Flush">
         <item name="cornerRadius">10dp</item>
         <item name="android:textAllCaps">false</item>
         <item name="strokeColor">@color/divider</item>

@@ -2,8 +2,10 @@ package com.nyantadev.socializee.repository
 
 import com.nyantadev.socializee.api.ApiService
 import com.nyantadev.socializee.models.*
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.Response
@@ -24,8 +26,7 @@ class AppRepository(private val api: ApiService) {
         val namePart = displayName.toRequestBody("text/plain".toMediaTypeOrNull())
         val bioPart = bio.toRequestBody("text/plain".toMediaTypeOrNull())
         val avatarPart = avatarFile?.let {
-            val reqBody = it.asRequestBody("image/*".toMediaTypeOrNull())
-            MultipartBody.Part.createFormData("avatar", it.name, reqBody)
+            MultipartBody.Part.createFormData("avatar", it.name, it.toMediaTypedRequestBody())
         }
         return api.updateProfile(namePart, bioPart, avatarPart)
     }
@@ -39,9 +40,8 @@ class AppRepository(private val api: ApiService) {
 
     suspend fun createPost(content: String, imageFiles: List<File>): Response<PostResponse> {
         val contentPart = content.toRequestBody("text/plain".toMediaTypeOrNull())
-        val imageParts = imageFiles.mapIndexed { i, file ->
-            val reqBody = file.asRequestBody("image/*".toMediaTypeOrNull())
-            MultipartBody.Part.createFormData("images", file.name, reqBody)
+        val imageParts = imageFiles.map { file ->
+            MultipartBody.Part.createFormData("images", file.name, file.toMediaTypedRequestBody())
         }
         return api.createPost(contentPart, imageParts)
     }
@@ -65,4 +65,29 @@ class AppRepository(private val api: ApiService) {
     suspend fun getFollowers(userId: String) = api.getFollowers(userId)
 
     suspend fun getFollowing(userId: String) = api.getFollowing(userId)
+
+    // ===== HELPER =====
+
+    /**
+     * Mendeteksi MIME type berdasarkan ekstensi file, lalu membuat RequestBody
+     * dengan Content-Type yang benar agar backend multer tidak menolak file.
+     */
+    private fun File.toMediaTypedRequestBody(): RequestBody {
+        val mimeType = when (extension.lowercase()) {
+            "jpg", "jpeg" -> "image/jpeg"
+            "png"         -> "image/png"
+            "gif"         -> "image/gif"
+            "webp"        -> "image/webp"
+            "bmp"         -> "image/bmp"
+            "mp4"         -> "video/mp4"
+            "mov"         -> "video/quicktime"
+            "avi"         -> "video/x-msvideo"
+            "mkv"         -> "video/x-matroska"
+            "3gp"         -> "video/3gpp"
+            "wmv"         -> "video/x-ms-wmv"
+            "flv"         -> "video/x-flv"
+            else          -> "application/octet-stream"
+        }
+        return asRequestBody(mimeType.toMediaType())
+    }
 }

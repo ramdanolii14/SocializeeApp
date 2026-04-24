@@ -3,6 +3,7 @@ package com.nyantadev.socializee.utils
 import android.content.Context
 import android.content.SharedPreferences
 import com.google.gson.Gson
+import com.nyantadev.socializee.api.RetrofitClient
 import com.nyantadev.socializee.models.User
 
 class SessionManager(context: Context) {

@@ -1,7 +1,10 @@
 package com.nyantadev.socializee.ui.fragments
 
 import android.app.Activity
+import android.content.Context
+import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -27,6 +30,7 @@ import com.nyantadev.socializee.viewmodel.ProfileViewModel
 import com.nyantadev.socializee.viewmodel.ProfileUpdateState
 import com.nyantadev.socializee.viewmodel.ViewModelFactory
 import java.io.File
+import java.io.FileOutputStream
 
 class ProfileFragment : Fragment() {
 
@@ -45,9 +49,58 @@ class ProfileFragment : Fragment() {
     private val avatarPickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val uri = result.data?.data ?: return@registerForActivityResult
-            selectedAvatarFile = File(uri.path ?: return@registerForActivityResult)
+            // Copy URI ke file sementara dengan ekstensi yang benar dari MIME type
+            selectedAvatarFile = copyUriToTempFile(uri)
             Glide.with(this).load(uri).circleCrop().into(binding.ivAvatar)
         }
+    }
+
+    /**
+     * Copy URI ke file sementara.
+     * Ekstensi file ditentukan dari MIME type via ContentResolver agar
+     * backend multer bisa mengenali tipe file dengan benar.
+     */
+    private fun copyUriToTempFile(uri: Uri): File? {
+        return try {
+            val context = requireContext()
+
+            // Deteksi MIME type dari ContentResolver (lebih akurat daripada nama file)
+            val mimeType = context.contentResolver.getType(uri)
+            val ext = when (mimeType) {
+                "image/jpeg" -> ".jpg"
+                "image/jpg"  -> ".jpg"
+                "image/png"  -> ".png"
+                "image/gif"  -> ".gif"
+                "image/webp" -> ".webp"
+                "image/bmp"  -> ".bmp"
+                else -> {
+                    // Fallback: ambil dari nama file asli
+                    val fileName = getFileName(context, uri)
+                    if (fileName.contains(".")) ".${fileName.substringAfterLast(".")}" else ".jpg"
+                }
+            }
+
+            val tempFile = File(context.cacheDir, "avatar_${System.currentTimeMillis()}$ext")
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                FileOutputStream(tempFile).use { output ->
+                    input.copyTo(output)
+                }
+            }
+            tempFile
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun getFileName(context: Context, uri: Uri): String {
+        var name = "file.jpg"
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (cursor.moveToFirst() && idx >= 0) {
+                name = cursor.getString(idx)
+            }
+        }
+        return name
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -75,7 +128,6 @@ class ProfileFragment : Fragment() {
     }
 
     private fun setupUI() {
-        // Show/hide buttons based on own profile
         binding.btnFollow.visibility = if (isOwnProfile) View.GONE else View.VISIBLE
         binding.btnEditProfile.visibility = if (isOwnProfile) View.VISIBLE else View.GONE
         binding.btnLogout.visibility = if (isOwnProfile) View.VISIBLE else View.GONE
@@ -99,7 +151,10 @@ class ProfileFragment : Fragment() {
         binding.btnSaveProfile.setOnClickListener {
             val name = binding.etDisplayName.text.toString().trim()
             val bio = binding.etBio.text.toString().trim()
-            if (name.isBlank()) { Toast.makeText(context, "Nama tidak boleh kosong", Toast.LENGTH_SHORT).show(); return@setOnClickListener }
+            if (name.isBlank()) {
+                Toast.makeText(context, "Nama tidak boleh kosong", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             authViewModel.updateProfile(name, bio, selectedAvatarFile)
         }
     }
@@ -161,11 +216,9 @@ class ProfileFragment : Fragment() {
                         .circleCrop()
                         .into(binding.ivAvatar)
 
-                    // Pre-fill edit fields
                     binding.etDisplayName.setText(user.displayName)
                     binding.etBio.setText(user.bio)
 
-                    // Follow button state
                     binding.btnFollow.text = if (user.isFollowing) "Diikuti" else "Ikuti"
                     binding.btnFollow.isSelected = user.isFollowing
 
