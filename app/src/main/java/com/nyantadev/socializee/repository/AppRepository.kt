@@ -25,8 +25,13 @@ class AppRepository(private val api: ApiService) {
     suspend fun updateProfile(displayName: String, bio: String, avatarFile: File?): Response<AuthResponse> {
         val namePart = displayName.toRequestBody("text/plain".toMediaTypeOrNull())
         val bioPart = bio.toRequestBody("text/plain".toMediaTypeOrNull())
+
         val avatarPart = avatarFile?.let {
-            MultipartBody.Part.createFormData("avatar", it.name, it.toMediaTypedRequestBody())
+            // Memastikan nama file yang dikirim punya ekstensi yang benar
+            val ext = it.extension.lowercase()
+            val fileName = "avatar_upload.${if (ext.isNotEmpty()) ext else "jpg"}"
+
+            MultipartBody.Part.createFormData("avatar", fileName, it.toMediaTypedRequestBody())
         }
         return api.updateProfile(namePart, bioPart, avatarPart)
     }
@@ -45,14 +50,18 @@ class AppRepository(private val api: ApiService) {
 
         val imageParts = imageFiles
             .filter { it.extension.lowercase() !in videoExtensions }
-            .map { file ->
-                MultipartBody.Part.createFormData("images", file.name, file.toMediaTypedRequestBody())
+            .mapIndexed { index, file ->
+                val ext = file.extension.lowercase()
+                val fileName = "image_$index.${if (ext.isNotEmpty()) ext else "jpg"}"
+                MultipartBody.Part.createFormData("images", fileName, file.toMediaTypedRequestBody())
             }
 
         val videoParts = imageFiles
             .filter { it.extension.lowercase() in videoExtensions }
-            .map { file ->
-                MultipartBody.Part.createFormData("videos", file.name, file.toMediaTypedRequestBody())
+            .mapIndexed { index, file ->
+                val ext = file.extension.lowercase()
+                val fileName = "video_$index.${if (ext.isNotEmpty()) ext else "mp4"}"
+                MultipartBody.Part.createFormData("videos", fileName, file.toMediaTypedRequestBody())
             }
 
         return api.createPost(contentPart, imageParts, videoParts)

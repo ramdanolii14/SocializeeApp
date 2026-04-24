@@ -1,10 +1,7 @@
 package com.nyantadev.socializee.ui.fragments
 
-import android.app.Activity
-import android.content.Context
 import android.net.Uri
 import android.os.Bundle
-import android.provider.OpenableColumns
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,6 +12,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.nyantadev.socializee.R
 import com.nyantadev.socializee.api.RetrofitClient
 import com.nyantadev.socializee.databinding.FragmentProfileBinding
@@ -45,13 +43,17 @@ class ProfileFragment : Fragment() {
     private var isOwnProfile = false
     private var selectedAvatarFile: File? = null
 
-    // ---- Avatar picker: use system photo picker (no crop lib needed) ----
+    // ---- Avatar picker: use system photo picker ----
     private val avatarPickerLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
             uri ?: return@registerForActivityResult
             selectedAvatarFile = copyUriToTempFile(uri)
             if (selectedAvatarFile != null) {
-                Glide.with(this).load(uri).circleCrop().into(binding.ivAvatar)
+                // Tampilkan gambar yang dipilih secara lokal sebelum diupload
+                Glide.with(this)
+                    .load(uri)
+                    .circleCrop()
+                    .into(binding.ivAvatar)
             } else {
                 Toast.makeText(context, "Gagal memproses gambar", Toast.LENGTH_SHORT).show()
             }
@@ -94,6 +96,7 @@ class ProfileFragment : Fragment() {
         sessionManager = SessionManager(requireContext())
         val repo = AppRepository(RetrofitClient.getApiService())
         val factory = ViewModelFactory(repo)
+
         profileViewModel = ViewModelProvider(this, factory)[ProfileViewModel::class.java]
         authViewModel = ViewModelProvider(this, factory)[AuthViewModel::class.java]
 
@@ -118,7 +121,6 @@ class ProfileFragment : Fragment() {
 
         binding.ivAvatar.setOnClickListener {
             if (isOwnProfile) {
-                // Launch system image picker directly
                 avatarPickerLauncher.launch("image/*")
             }
         }
@@ -134,10 +136,13 @@ class ProfileFragment : Fragment() {
         binding.btnSaveProfile.setOnClickListener {
             val name = binding.etDisplayName.text.toString().trim()
             val bio = binding.etBio.text.toString().trim()
+
             if (name.isBlank()) {
                 Toast.makeText(context, "Nama tidak boleh kosong", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+
+            // Panggil API Update
             authViewModel.updateProfile(name, bio, selectedAvatarFile)
         }
     }
@@ -147,8 +152,7 @@ class ProfileFragment : Fragment() {
         if (isEditing) {
             binding.editContainer.visibility = View.GONE
             binding.btnEditProfile.text = "Edit Profil"
-            // Reset selected avatar file if cancelled
-            selectedAvatarFile = null
+            selectedAvatarFile = null // Reset file jika batal edit
         } else {
             binding.editContainer.visibility = View.VISIBLE
             binding.btnEditProfile.text = "Batal"
@@ -158,10 +162,10 @@ class ProfileFragment : Fragment() {
     private fun setupRecyclerView() {
         postAdapter = PostAdapter(
             currentUserId = sessionManager.getUserId() ?: "",
-            onLike = { post, pos -> },
+            onLike = { _, _ -> },
             onComment = { post -> openComments(post) },
             onUserClick = { },
-            onDelete = { post, _ -> },
+            onDelete = { _, _ -> },
             onImageClick = { urls, idx -> openImageViewer(urls, idx) }
         )
         binding.rvPosts.apply {
@@ -178,6 +182,7 @@ class ProfileFragment : Fragment() {
                 is ProfileState.Success -> {
                     binding.progressBar.visibility = View.GONE
                     binding.contentContainer.visibility = View.VISIBLE
+
                     val user = state.user
                     binding.tvDisplayName.text = user.displayName.ifBlank { user.username }
                     binding.tvUsername.text = "@${user.username}"
@@ -187,11 +192,19 @@ class ProfileFragment : Fragment() {
                     binding.tvFollowing.text = "${user.followingCount} Mengikuti"
                     binding.tvPostsCount.text = "${user.postsCount} Post"
 
-                    Glide.with(this)
-                        .load(user.avatarUrl.ifBlank { null })
-                        .placeholder(R.drawable.ic_default_avatar)
-                        .circleCrop()
-                        .into(binding.ivAvatar)
+                    // Glide Null & Blank Safety Fix
+                    val avatarUrl = user.avatarUrl
+                    if (!avatarUrl.isNullOrBlank()) {
+                        Glide.with(this@ProfileFragment)
+                            .load(avatarUrl)
+                            .placeholder(R.drawable.ic_default_avatar)
+                            .error(R.drawable.ic_default_avatar)
+                            .circleCrop()
+                            .diskCacheStrategy(DiskCacheStrategy.ALL) // Pastikan ter-cache dengan baik
+                            .into(binding.ivAvatar)
+                    } else {
+                        binding.ivAvatar.setImageResource(R.drawable.ic_default_avatar)
+                    }
 
                     binding.etDisplayName.setText(user.displayName)
                     binding.etBio.setText(user.bio)
@@ -216,17 +229,25 @@ class ProfileFragment : Fragment() {
             binding.tvFollowers.text = "$count Pengikut"
         }
 
+        // Observasi status update profil
         authViewModel.profileState.observe(viewLifecycleOwner) { state ->
             when (state) {
                 is ProfileUpdateState.Loading -> binding.progressBar.visibility = View.VISIBLE
                 is ProfileUpdateState.Success -> {
                     binding.progressBar.visibility = View.GONE
+
+                    // Reset file temp setelah sukses
                     selectedAvatarFile = null
+
+                    // Simpan data terbaru ke session manager agar tetap sinkron
                     sessionManager.saveUser(state.user)
-                    // Close edit mode properly
+
                     binding.editContainer.visibility = View.GONE
                     binding.btnEditProfile.text = "Edit Profil"
+
+                    // Load ulang data dari server untuk me-refresh tampilan UI secara penuh
                     profileViewModel.loadProfile(targetUserId!!)
+
                     Toast.makeText(context, "Profil diperbarui!", Toast.LENGTH_SHORT).show()
                 }
                 is ProfileUpdateState.Error -> {
@@ -239,7 +260,6 @@ class ProfileFragment : Fragment() {
 
     private fun openComments(post: Post) {
         val bundle = Bundle().apply { putString("postId", post.id) }
-        // Use correct action depending on which nav destination we are
         val actionId = if (isOwnProfile) {
             R.id.action_profileSelf_to_comments
         } else {
@@ -248,7 +268,6 @@ class ProfileFragment : Fragment() {
         try {
             findNavController().navigate(actionId, bundle)
         } catch (e: IllegalArgumentException) {
-            // Fallback: try the other action
             try {
                 val fallback = if (isOwnProfile)
                     R.id.action_profile_to_comments
@@ -266,7 +285,6 @@ class ProfileFragment : Fragment() {
             putStringArray("urls", urls.toTypedArray())
             putInt("startIndex", startIndex)
         }
-        // Use correct action depending on which nav destination we are
         val actionId = if (isOwnProfile) {
             R.id.action_profileSelf_to_imageViewer
         } else {
@@ -275,7 +293,6 @@ class ProfileFragment : Fragment() {
         try {
             findNavController().navigate(actionId, bundle)
         } catch (e: IllegalArgumentException) {
-            // Fallback
             try {
                 val fallback = if (isOwnProfile)
                     R.id.action_profile_to_imageViewer

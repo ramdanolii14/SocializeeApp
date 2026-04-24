@@ -148,11 +148,39 @@ class PostAdapter(
                 layoutParams = lp
                 scaleType = ImageView.ScaleType.CENTER_CROP
                 if (isVideo) {
-                    // Video: show placeholder with play icon — Glide can't decode video frames reliably
-                    setImageResource(R.drawable.ic_image_placeholder)
-                    setColorFilter(binding.root.context.getColor(R.color.text_secondary))
-                    // Overlay play icon via foreground (API 23+)
-                    foreground = binding.root.context.getDrawable(android.R.drawable.ic_media_play)
+                    Glide.with(context)
+                        .asBitmap()
+                        .load(url)
+                        .apply(
+                            com.bumptech.glide.request.RequestOptions()
+                                .frame(1_000_000L) // frame at 1 second (in microseconds)
+                                .centerCrop()
+                                .transform(RoundedCorners(cornerPx))
+                        )
+                        .placeholder(R.drawable.ic_image_placeholder)
+                        .error(R.drawable.ic_image_placeholder)
+                        .into(object : com.bumptech.glide.request.target.CustomTarget<android.graphics.Bitmap>() {
+                            override fun onResourceReady(
+                                resource: android.graphics.Bitmap,
+                                transition: com.bumptech.glide.request.transition.Transition<in android.graphics.Bitmap>?
+                            ) {
+                                setImageBitmap(resource)
+                                // Overlay play icon on thumbnail
+                                foreground = androidx.core.content.ContextCompat.getDrawable(
+                                    context, android.R.drawable.ic_media_play
+                                )
+                            }
+                            override fun onLoadCleared(placeholder: android.graphics.drawable.Drawable?) {
+                                setImageDrawable(placeholder)
+                            }
+                            override fun onLoadFailed(errorDrawable: android.graphics.drawable.Drawable?) {
+                                // Fallback ke placeholder + play icon
+                                setImageResource(R.drawable.ic_image_placeholder)
+                                foreground = androidx.core.content.ContextCompat.getDrawable(
+                                    context, android.R.drawable.ic_media_play
+                                )
+                            }
+                        })
                 } else {
                     Glide.with(context)
                         .load(url)
