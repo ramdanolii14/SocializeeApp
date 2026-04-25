@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    res/color-night/input_stroke_color.xml
+
+    Override khusus dark mode.
+    Letakkan file ini di folder:  res/color-night/
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Focused – tetap pakai primary -->
+    <item android:state_focused="true"
+        android:color="@color/primary"/>
+
+    <!-- Unfocused Dark mode : putih semi-transparan agar terlihat di background gelap -->
+    <item android:color="#BDFFFFFF"
+        android:state_enabled="true"/>
+
+</selector>

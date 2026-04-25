@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -9,19 +10,22 @@
     <!-- Top Bar -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="?attr/actionBarSize"
         android:orientation="horizontal"
         android:background="@color/surface"
         android:gravity="center_vertical"
-        android:paddingStart="8dp"
-        android:paddingEnd="16dp">
+        android:paddingStart="4dp"
+        android:paddingEnd="16dp"
+        android:elevation="2dp">
 
         <ImageView
             android:id="@+id/btnClose"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="@dimen/touch_target"
+            android:layout_height="@dimen/touch_target"
             android:src="@drawable/ic_close"
-            android:padding="8dp"/>
+            android:padding="10dp"
+            android:contentDescription="Tutup"
+            android:background="?attr/selectableItemBackgroundBorderless"/>
 
         <TextView
             android:layout_width="0dp"
@@ -40,19 +44,14 @@
             android:layout_marginEnd="8dp"
             android:visibility="gone"/>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPost"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="Posting"
-            android:textSize="14sp"
-            style="@style/Widget.MaterialComponents.Button"/>
     </LinearLayout>
 
+    <!-- Scrollable Content Area -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -63,10 +62,11 @@
             <!-- Avatar -->
             <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/ivAvatar"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="@dimen/avatar_size"
+                android:layout_height="@dimen/avatar_size"
                 android:src="@drawable/ic_default_avatar"
-                android:layout_marginEnd="12dp"/>
+                android:layout_marginEnd="12dp"
+                android:layout_marginTop="2dp"/>
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -115,29 +115,55 @@
                         android:orientation="horizontal"/>
                 </HorizontalScrollView>
 
-                <!-- Add Image Button -->
-                <LinearLayout
-                    android:id="@+id/btnAddImage"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginTop="12dp">
-
-                    <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:src="@drawable/ic_image"
-                        android:layout_marginEnd="6dp"/>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Tambah foto"
-                        android:textSize="14sp"
-                        android:textColor="@color/text_secondary"/>
-                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
+
+    <!-- Bottom Action Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/surface"
+        android:elevation="8dp">
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/divider"/>
+
+        <!-- Add Image Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAddImage"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="12dp"
+            android:text="📷  Tambahkan Foto"
+            android:textSize="14sp"
+            android:textColor="@color/text_primary"
+            android:letterSpacing="0.02"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            app:strokeColor="@color/divider"
+            app:cornerRadius="12dp"
+            android:background="@drawable/bg_add_photo_button"
+            android:gravity="center"/>
+
+        <!-- Post Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPost"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="16dp"
+            android:text="Posting"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            style="@style/Widget.MaterialComponents.Button"
+            app:cornerRadius="14dp"/>
+
+    </LinearLayout>
+
 </LinearLayout>

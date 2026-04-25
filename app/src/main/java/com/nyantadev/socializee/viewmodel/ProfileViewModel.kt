@@ -20,7 +20,7 @@ class ProfileViewModel(private val repo: AppRepository) : ViewModel() {
     private val _profileState = MutableLiveData<ProfileState>()
     val profileState: LiveData<ProfileState> = _profileState
 
-    private val _followState = MutableLiveData<Pair<Boolean, Int>>() // following, followers_count
+    private val _followState = MutableLiveData<Pair<Boolean, Int>>()
     val followState: LiveData<Pair<Boolean, Int>> = _followState
 
     private val _searchResults = MutableLiveData<List<User>>()
@@ -29,15 +29,23 @@ class ProfileViewModel(private val repo: AppRepository) : ViewModel() {
     private val _searchLoading = MutableLiveData<Boolean>(false)
     val searchLoading: LiveData<Boolean> = _searchLoading
 
+    // ── Baru: list followers & following ──────────────────────────────────────
+    private val _followersList = MutableLiveData<List<User>>()
+    val followersList: LiveData<List<User>> = _followersList
+
+    private val _followingList = MutableLiveData<List<User>>()
+    val followingList: LiveData<List<User>> = _followingList
+    // ──────────────────────────────────────────────────────────────────────────
+
     fun loadProfile(userId: String) {
         viewModelScope.launch {
             _profileState.value = ProfileState.Loading
             try {
-                val userRes = repo.getUserProfile(userId)
+                val userRes  = repo.getUserProfile(userId)
                 val postsRes = repo.getUserPosts(userId)
 
                 if (userRes.isSuccessful && userRes.body()?.success == true) {
-                    val user = userRes.body()!!.user!!
+                    val user  = userRes.body()!!.user!!
                     val posts = if (postsRes.isSuccessful) postsRes.body()?.posts ?: emptyList() else emptyList()
                     _profileState.value = ProfileState.Success(user, posts)
                 } else {
@@ -80,4 +88,35 @@ class ProfileViewModel(private val repo: AppRepository) : ViewModel() {
             }
         }
     }
+
+    // ── Baru ──────────────────────────────────────────────────────────────────
+
+    fun loadFollowers(userId: String) {
+        viewModelScope.launch {
+            try {
+                val res = repo.getFollowers(userId)
+                _followersList.value =
+                    if (res.isSuccessful && res.body()?.success == true)
+                        res.body()!!.users ?: emptyList()
+                    else emptyList()
+            } catch (e: Exception) {
+                _followersList.value = emptyList()
+            }
+        }
+    }
+
+    fun loadFollowing(userId: String) {
+        viewModelScope.launch {
+            try {
+                val res = repo.getFollowing(userId)
+                _followingList.value =
+                    if (res.isSuccessful && res.body()?.success == true)
+                        res.body()!!.users ?: emptyList()
+                    else emptyList()
+            } catch (e: Exception) {
+                _followingList.value = emptyList()
+            }
+        }
+    }
+    // ──────────────────────────────────────────────────────────────────────────
 }

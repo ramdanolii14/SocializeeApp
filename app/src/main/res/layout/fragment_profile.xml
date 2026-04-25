@@ -14,7 +14,7 @@
         android:background="@color/surface"
         android:gravity="center_vertical"
         android:paddingStart="4dp"
-        android:paddingEnd="8dp">
+        android:paddingEnd="4dp">
 
         <ImageView
             android:id="@+id/ivBack"
@@ -26,14 +26,18 @@
 
         <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1"/>
 
+        <!-- Titik tiga / more options — selalu visible -->
         <ImageView
-            android:id="@+id/ivLogoutIcon"
+            android:id="@+id/ivMoreOptions"
             android:layout_width="44dp"
             android:layout_height="44dp"
-            android:src="@drawable/ic_logout"
+            android:src="@drawable/ic_more_vert"
             android:padding="10dp"
-            android:visibility="visible"
-            android:contentDescription="Logout"/>
+            android:contentDescription="Opsi lainnya"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless"/>
+
     </LinearLayout>
 
     <ProgressBar
@@ -52,7 +56,8 @@
             android:id="@+id/contentContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -75,6 +80,7 @@
                     android:orientation="horizontal"
                     android:layout_marginStart="16dp">
 
+                    <!-- Posts count (tidak clickable) -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -97,12 +103,18 @@
                             android:textColor="@color/text_secondary"/>
                     </LinearLayout>
 
+                    <!-- Followers (clickable) -->
                     <LinearLayout
+                        android:id="@+id/layoutFollowers"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:orientation="vertical"
-                        android:gravity="center">
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground"
+                        android:padding="4dp">
                         <TextView
                             android:id="@+id/tvFollowers"
                             android:layout_width="wrap_content"
@@ -116,15 +128,21 @@
                             android:layout_height="wrap_content"
                             android:text="Pengikut"
                             android:textSize="12sp"
-                            android:textColor="@color/text_secondary"/>
+                            android:textColor="@color/primary"/>
                     </LinearLayout>
 
+                    <!-- Following (clickable) -->
                     <LinearLayout
+                        android:id="@+id/layoutFollowing"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:orientation="vertical"
-                        android:gravity="center">
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground"
+                        android:padding="4dp">
                         <TextView
                             android:id="@+id/tvFollowing"
                             android:layout_width="wrap_content"
@@ -138,7 +156,7 @@
                             android:layout_height="wrap_content"
                             android:text="Mengikuti"
                             android:textSize="12sp"
-                            android:textColor="@color/text_secondary"/>
+                            android:textColor="@color/primary"/>
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
@@ -180,22 +198,27 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="16dp">
+                android:padding="16dp"
+                android:gravity="center_vertical">
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnFollow"
                     android:layout_width="match_parent"
                     android:layout_height="40dp"
                     android:text="Ikuti"
-                    android:visibility="gone"/>
+                    android:textSize="14sp"
+                    android:visibility="gone"
+                    app:cornerRadius="20dp"
+                    style="@style/Widget.MaterialComponents.Button"/>
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnEditProfile"
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     android:layout_width="match_parent"
                     android:layout_height="40dp"
                     android:text="Edit Profil"
-                    android:textColor="@color/text_primary"/>
+                    android:textColor="@color/text_primary"
+                    app:cornerRadius="20dp"/>
             </LinearLayout>
 
             <LinearLayout

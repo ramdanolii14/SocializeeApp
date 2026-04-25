@@ -4,16 +4,16 @@
     <item
         android:id="@+id/feedFragment"
         android:icon="@drawable/ic_home"
-        android:title="Beranda"/>
+        android:title="Home"/>
 
     <item
         android:id="@+id/exploreFragment"
         android:icon="@drawable/ic_search"
-        android:title="Jelajah"/>
+        android:title="Explore"/>
 
     <item
         android:id="@+id/profileSelfFragment"
         android:icon="@drawable/ic_person"
-        android:title="Profil"/>
+        android:title="Profile"/>
 
 </menu>

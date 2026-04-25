@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    res/values/dimens.xml
+    Ukuran dasar (mdpi/hdpi fallback). Salin folder ini ke:
+      res/values-sw360dp/dimens.xml  → untuk tablet/layar besar
+    dan sesuaikan nilainya jika diperlukan.
+-->
+<resources>
+    <!-- Avatar ukuran standar -->
+    <dimen name="avatar_size">44dp</dimen>
+
+    <!-- Minimum touch target Android HIG: 48dp -->
+    <dimen name="touch_target">48dp</dimen>
+</resources>
