@@ -13,7 +13,9 @@ data class User(
     @SerializedName("following_count") val followingCount: Int = 0,
     @SerializedName("posts_count") val postsCount: Int = 0,
     @SerializedName("is_following") val isFollowing: Boolean = false,
-    @SerializedName("created_at") val createdAt: String = ""
+    @SerializedName("created_at") val createdAt: String = "",
+    @SerializedName("role") val role: String? = "user",         // [NEW]
+    @SerializedName("is_banned") val isBanned: Boolean = false  // [NEW]
 )
 
 data class PostImage(
@@ -41,23 +43,12 @@ data class Post(
     @SerializedName("is_liked") var isLiked: Boolean = false,
     @SerializedName("is_reposted") var isReposted: Boolean = false,
 
-    // ── Kolom repost baru ──────────────────────────────────────────────────
-    /** TRUE jika baris ini adalah repost (bukan post asli) */
+    // ── Kolom repost ──────────────────────────────────────────────────────────
     @SerializedName("is_repost") val isRepost: Boolean = false,
-
-    /** UUID post asli yang di-repost */
     @SerializedName("original_post_id") val originalPostId: String? = null,
-
-    /** UUID user yang melakukan repost */
     @SerializedName("reposted_by_user_id") val repostedByUserId: String? = null,
-
-    /** Username orang yang merepost — untuk label "X merepost" */
     @SerializedName("reposted_by_username") val repostedByUsername: String? = null,
-
-    /** Display name orang yang merepost */
     @SerializedName("reposted_by_display_name") val repostedByDisplayName: String? = null,
-
-    /** Avatar orang yang merepost */
     @SerializedName("reposted_by_avatar_url") val repostedByAvatarUrl: String? = null,
 )
 

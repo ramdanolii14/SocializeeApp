@@ -1,5 +1,6 @@
 package com.nyantadev.socializee.ui.fragments
 
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -17,9 +18,11 @@ import com.nyantadev.socializee.api.RetrofitClient
 import com.nyantadev.socializee.databinding.FragmentExploreBinding
 import com.nyantadev.socializee.models.Post
 import com.nyantadev.socializee.repository.AppRepository
+import com.nyantadev.socializee.ui.AuthActivity
 import com.nyantadev.socializee.ui.adapters.PostAdapter
 import com.nyantadev.socializee.ui.adapters.UserAdapter
 import com.nyantadev.socializee.utils.SessionManager
+import com.nyantadev.socializee.viewmodel.BannedEvent
 import com.nyantadev.socializee.viewmodel.FeedState
 import com.nyantadev.socializee.viewmodel.FeedViewModel
 import com.nyantadev.socializee.viewmodel.ProfileViewModel
@@ -80,6 +83,7 @@ class ExploreFragment : Fragment() {
     private fun setupPostsRecyclerView() {
         postAdapter = PostAdapter(
             currentUserId = sessionManager.getUserId() ?: "",
+            isAdmin = sessionManager.isAdmin(),          // [NEW]
             onLike = { post, pos -> feedViewModel.toggleLike(post, pos) },
             onComment = { post -> openComments(post) },
             onRepost = { post -> feedViewModel.toggleRepost(post) },
@@ -125,6 +129,22 @@ class ExploreFragment : Fragment() {
         profileViewModel.searchLoading.observe(viewLifecycleOwner) { loading ->
             binding.searchProgress.visibility = if (loading) View.VISIBLE else View.GONE
         }
+
+        // [NEW] Observasi event banned — paksa logout
+        feedViewModel.bannedEvent.observe(viewLifecycleOwner) { event ->
+            event.getContentIfNotHandled()?.let { message ->
+                handleBanned(message)
+            }
+        }
+    }
+
+    // [NEW]
+    private fun handleBanned(message: String) {
+        sessionManager.logout()
+        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+        startActivity(Intent(requireContext(), AuthActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        })
     }
 
     private fun showSearchMode() {

@@ -13,9 +13,10 @@ class SessionManager(context: Context) {
 
     companion object {
         private const val PREF_NAME = "SocializeeSession"
-        private const val KEY_TOKEN = "auth_token"
-        private const val KEY_USER = "current_user"
+        private const val KEY_TOKEN   = "auth_token"
+        private const val KEY_USER    = "current_user"
         private const val KEY_USER_ID = "user_id"
+        private const val KEY_ROLE    = "user_role"  // [NEW]
     }
 
     fun saveToken(token: String) {
@@ -28,6 +29,7 @@ class SessionManager(context: Context) {
         prefs.edit()
             .putString(KEY_USER, gson.toJson(user))
             .putString(KEY_USER_ID, user.id)
+            .putString(KEY_ROLE, user.role ?: "user")  // [NEW]
             .apply()
     }
 
@@ -37,6 +39,9 @@ class SessionManager(context: Context) {
     }
 
     fun getUserId(): String? = prefs.getString(KEY_USER_ID, null)
+
+    // [NEW] Cek apakah user yang sedang login adalah admin
+    fun isAdmin(): Boolean = prefs.getString(KEY_ROLE, "user") == "admin"
 
     fun isLoggedIn(): Boolean = getToken() != null
 

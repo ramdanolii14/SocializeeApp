@@ -18,9 +18,10 @@ import java.util.*
 
 class PostAdapter(
     private val currentUserId: String,
+    private val isAdmin: Boolean = false,      // [NEW] — diisi dari SessionManager.isAdmin()
     private val onLike: (Post, Int) -> Unit,
     private val onComment: (Post) -> Unit,
-    private val onRepost: (Post) -> Unit,           // ← BARU
+    private val onRepost: (Post) -> Unit,
     private val onUserClick: (String) -> Unit,
     private val onDelete: (Post, Int) -> Unit,
     private val onImageClick: (List<String>, Int) -> Unit
@@ -77,9 +78,11 @@ class PostAdapter(
             // ── Waktu ─────────────────────────────────────────────────────────
             tvTime.text = formatTime(post.createdAt)
 
-            // ── Tombol hapus: hanya post asli milik sendiri ───────────────────
-            // Baris repost (is_repost = true) tidak bisa dihapus dari sini
-            ivDelete.visibility = if (post.userId == currentUserId && !post.isRepost) View.VISIBLE else View.GONE
+            // ── Tombol hapus ──────────────────────────────────────────────────
+            // [CHANGED] Admin bisa hapus post siapapun (kecuali baris repost)
+            // User biasa hanya bisa hapus miliknya sendiri (bukan repost)
+            val canDelete = !post.isRepost && (post.userId == currentUserId || isAdmin)
+            ivDelete.visibility = if (canDelete) View.VISIBLE else View.GONE
 
             // ── Gambar ────────────────────────────────────────────────────────
             imageContainer.removeAllViews()
@@ -101,7 +104,7 @@ class PostAdapter(
             ivDelete.setOnClickListener      { onDelete(post, position) }
         }
 
-        // ── Image grid (sama persis dengan versi asli) ────────────────────────
+        // ── Image grid ────────────────────────────────────────────────────────
         private fun buildImageGrid(urls: List<String>, postPosition: Int) = with(binding) {
             imageContainer.removeAllViews()
             val context  = root.context

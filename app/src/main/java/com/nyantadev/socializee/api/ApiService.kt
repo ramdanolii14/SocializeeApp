@@ -108,4 +108,14 @@ interface ApiService {
 
     @DELETE("notifications/device-token")
     suspend fun removeDeviceToken(@Body request: DeviceTokenRequest): Response<GenericResponse>
+
+    // ======= ADMIN =======  [NEW]
+    @POST("admin/users/{id}/ban")
+    suspend fun banUser(@Path("id") userId: String): Response<GenericResponse>
+
+    @POST("admin/users/{id}/unban")
+    suspend fun unbanUser(@Path("id") userId: String): Response<GenericResponse>
+
+    @GET("admin/users/{id}/status")
+    suspend fun getUserAdminStatus(@Path("id") userId: String): Response<AdminUserStatusResponse>
 }

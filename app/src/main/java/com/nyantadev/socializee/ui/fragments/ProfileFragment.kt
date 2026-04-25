@@ -25,13 +25,14 @@ import com.nyantadev.socializee.api.RetrofitClient
 import com.nyantadev.socializee.databinding.FragmentProfileBinding
 import com.nyantadev.socializee.models.Post
 import com.nyantadev.socializee.repository.AppRepository
+import com.nyantadev.socializee.ui.AuthActivity
 import com.nyantadev.socializee.ui.MainActivity
 import com.nyantadev.socializee.ui.adapters.PostAdapter
 import com.nyantadev.socializee.utils.SessionManager
 import com.nyantadev.socializee.utils.UpdateChecker
 import com.nyantadev.socializee.utils.UpdateNotificationHelper
 import com.nyantadev.socializee.viewmodel.AuthViewModel
-import com.nyantadev.socializee.viewmodel.FeedViewModel          // ← TAMBAH
+import com.nyantadev.socializee.viewmodel.FeedViewModel
 import com.nyantadev.socializee.viewmodel.ProfileState
 import com.nyantadev.socializee.viewmodel.ProfileViewModel
 import com.nyantadev.socializee.viewmodel.ProfileUpdateState
@@ -47,7 +48,7 @@ class ProfileFragment : Fragment() {
 
     private lateinit var profileViewModel: ProfileViewModel
     private lateinit var authViewModel: AuthViewModel
-    private lateinit var feedViewModel: FeedViewModel              // ← TAMBAH
+    private lateinit var feedViewModel: FeedViewModel
     private lateinit var sessionManager: SessionManager
     private lateinit var postAdapter: PostAdapter
 
@@ -66,7 +67,7 @@ class ProfileFragment : Fragment() {
                     .circleCrop()
                     .into(binding.ivEditAvatar)
             } else {
-                Toast.makeText(context, "Gagal memproses gambar", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Failed to process media.", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -108,10 +109,8 @@ class ProfileFragment : Fragment() {
         val repo = AppRepository(RetrofitClient.getApiService())
         val factory = ViewModelFactory(repo)
 
-        // FIX 1: profileViewModel pakai requireActivity() agar shared dengan Explore
         profileViewModel = ViewModelProvider(requireActivity(), factory)[ProfileViewModel::class.java]
         authViewModel    = ViewModelProvider(this, factory)[AuthViewModel::class.java]
-        // FIX 2: feedViewModel pakai requireActivity() — sama instance dengan Feed & Explore
         feedViewModel    = ViewModelProvider(requireActivity(), factory)[FeedViewModel::class.java]
 
         targetUserId = arguments?.getString("userId") ?: sessionManager.getUserId()
@@ -137,7 +136,7 @@ class ProfileFragment : Fragment() {
 
             val snackbar = Snackbar.make(
                 binding.root,
-                "✨ Versi ${info.latestVersion} tersedia! Kamu masih pakai ${BuildConfig.VERSION_NAME}.",
+                "✨ Versi ${info.latestVersion} Available! You still using ${BuildConfig.VERSION_NAME}.",
                 Snackbar.LENGTH_INDEFINITE
             )
             snackbar.setAction("Update") { openUrl(info.releaseUrl) }
@@ -156,40 +155,85 @@ class ProfileFragment : Fragment() {
         val popup = PopupMenu(themedContext, anchor)
 
         if (isOwnProfile) {
-            popup.menu.add(0, MENU_SETTINGS,      0, "⚙Pengaturan")
-            popup.menu.add(0, MENU_PRIVACY,       1, "Privasi & Keamanan")
-            popup.menu.add(0, MENU_NOTIFICATIONS, 2, "Notifikasi")
-            popup.menu.add(0, MENU_THEME,         3, "Tema")
-            popup.menu.add(0, MENU_HELP,          4, "Bantuan & Dukungan")
-            popup.menu.add(0, MENU_ABOUT,         5, "ℹTentang Aplikasi")
-            popup.menu.add(0, MENU_CHECK_UPDATE,  6, "Cek Pembaruan")
-            popup.menu.add(0, MENU_LOGOUT,        7, "Keluar")
+            popup.menu.add(0, MENU_SETTINGS,      0, "Settings")
+            popup.menu.add(0, MENU_PRIVACY,       1, "Privacy & Security")
+            popup.menu.add(0, MENU_NOTIFICATIONS, 2, "Notification")
+            popup.menu.add(0, MENU_THEME,         3, "Theme")
+            popup.menu.add(0, MENU_HELP,          4, "Help & Support")
+            popup.menu.add(0, MENU_ABOUT,         5, "About App")
+            popup.menu.add(0, MENU_CHECK_UPDATE,  6, "Check Update")
+            popup.menu.add(0, MENU_LOGOUT,        7, "Log Out")
         } else {
-            popup.menu.add(0, MENU_REPORT_USER,   0, "🚩  Laporkan Pengguna")
-            popup.menu.add(0, MENU_BLOCK_USER,    1, "🚫  Blokir Pengguna")
-            popup.menu.add(0, MENU_COPY_LINK,     2, "🔗  Salin Tautan Profil")
-            popup.menu.add(0, MENU_SHARE_PROFILE, 3, "↗️  Bagikan Profil")
+            popup.menu.add(0, MENU_REPORT_USER,   0, "Report")
+            popup.menu.add(0, MENU_BLOCK_USER,    1, "Block User")
+            popup.menu.add(0, MENU_COPY_LINK,     2, "Copy Profile Link")
+            popup.menu.add(0, MENU_SHARE_PROFILE, 3, "Share Profile")
+
+            // [NEW] Menu ban khusus admin
+            if (sessionManager.isAdmin()) {
+                popup.menu.add(0, MENU_BAN_USER, 4, "Ban User")
+            }
         }
 
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                MENU_SETTINGS      -> { comingSoon("Pengaturan") ; true }
-                MENU_PRIVACY       -> { comingSoon("Privasi & Keamanan") ; true }
-                MENU_NOTIFICATIONS -> { comingSoon("Notifikasi") ; true }
-                MENU_THEME         -> { comingSoon("Tema") ; true }
-                MENU_HELP          -> { comingSoon("Bantuan & Dukungan") ; true }
+                MENU_SETTINGS      -> { comingSoon("Settings") ; true }
+                MENU_PRIVACY       -> { comingSoon("Privacy & Security") ; true }
+                MENU_NOTIFICATIONS -> { comingSoon("Notification") ; true }
+                MENU_THEME         -> { comingSoon("Theme") ; true }
+                MENU_HELP          -> { comingSoon("Help & Support") ; true }
                 MENU_ABOUT         -> { showAboutDialog() ; true }
                 MENU_CHECK_UPDATE  -> { manualCheckUpdate() ; true }
                 MENU_LOGOUT        -> { (activity as? MainActivity)?.logout() ; true }
-                MENU_REPORT_USER   -> { comingSoon("Laporkan Pengguna") ; true }
-                MENU_BLOCK_USER    -> { comingSoon("Blokir Pengguna") ; true }
+                MENU_REPORT_USER   -> { comingSoon("Report User") ; true }
+                MENU_BLOCK_USER    -> { comingSoon("Block User") ; true }
                 MENU_COPY_LINK     -> { copyProfileLink() ; true }
                 MENU_SHARE_PROFILE -> { shareProfile() ; true }
+                MENU_BAN_USER      -> { confirmBanUser() ; true }  // [NEW]
                 else -> false
             }
         }
 
         popup.show()
+    }
+
+    // [NEW] Konfirmasi ban user
+    private fun confirmBanUser() {
+        val username = binding.tvUsername.text.toString()
+        AlertDialog.Builder(requireContext())
+            .setTitle("Ban User")
+            .setMessage("Are you sure to ban $username?\n\nThis user can't login and will be automatically logout.")
+            .setPositiveButton("Ban") { _, _ ->
+                banUser()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    // [NEW] Eksekusi ban via ViewModel
+    private fun banUser() {
+        val uid = targetUserId ?: return
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val res = RetrofitClient.getApiService().banUser(uid)
+                if (res.isSuccessful && res.body()?.success == true) {
+                    Toast.makeText(
+                        context,
+                        res.body()?.message ?: "User successfully banned!",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    // Kembali ke halaman sebelumnya
+                    findNavController().navigateUp()
+                } else {
+                    val errMsg = res.errorBody()?.string()
+                        ?.let { Regex("\"message\":\"([^\"]+)\"").find(it)?.groupValues?.get(1) }
+                        ?: "Failed to ban user."
+                    Toast.makeText(context, errMsg, Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun comingSoon(featureName: String) {
@@ -204,37 +248,37 @@ class ProfileFragment : Fragment() {
             .setMessage(
                 "Versi: $version ($versionCode)\n\n" +
                         "Made with ❤️ by Ramdan.\n\n" +
-                        "Kunjungi GitHub kami untuk melihat source code dan pembaruan terbaru."
+                        "Visit Our GitHub to see the source code and our latest version."
             )
-            .setPositiveButton("Buka GitHub") { _, _ -> openUrl(UpdateChecker.githubReleasesUrl) }
-            .setNegativeButton("Tutup", null)
+            .setPositiveButton("Open Github") { _, _ -> openUrl(UpdateChecker.githubReleasesUrl) }
+            .setNegativeButton("Close", null)
             .show()
     }
 
     private fun manualCheckUpdate() {
-        Toast.makeText(context, "Memeriksa pembaruan...", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "Checking for update...", Toast.LENGTH_SHORT).show()
         viewLifecycleOwner.lifecycleScope.launch {
             val info = UpdateChecker.check(BuildConfig.VERSION_NAME)
             if (info != null) {
                 AlertDialog.Builder(requireContext())
-                    .setTitle("🎉 Pembaruan Tersedia!")
+                    .setTitle("🎉 Update Available!")
                     .setMessage(
-                        "Versi terbaru: ${info.latestVersion}\n" +
-                                "Versi kamu: ${BuildConfig.VERSION_NAME}\n\n" +
-                                if (info.releaseNotes.isNotBlank()) "Apa yang baru:\n${info.releaseNotes.take(300)}" else ""
+                        "New Version: ${info.latestVersion}\n" +
+                                "Your Version: ${BuildConfig.VERSION_NAME}\n\n" +
+                                if (info.releaseNotes.isNotBlank()) "What's new:\n${info.releaseNotes.take(300)}" else ""
                     )
-                    .setPositiveButton("Download Sekarang") { _, _ -> openUrl(info.releaseUrl) }
-                    .setNegativeButton("Nanti Saja", null)
+                    .setPositiveButton("Download Now") { _, _ -> openUrl(info.releaseUrl) }
+                    .setNegativeButton("Cancel", null)
                     .show()
             } else {
-                Toast.makeText(context, "Aplikasi sudah versi terbaru!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "You using the latest version!", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     private fun copyProfileLink() {
         val username = binding.tvUsername.text.toString().removePrefix("@")
-        val link = "https://socializee.app/u/$username"
+        val link = "https://nyanpixel.my.id/u/$username"
         val clipboard = requireContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE)
                 as android.content.ClipboardManager
         clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Profile Link", link))
@@ -243,7 +287,7 @@ class ProfileFragment : Fragment() {
 
     private fun shareProfile() {
         val username = binding.tvUsername.text.toString().removePrefix("@")
-        val link = "https://socializee.app/u/$username"
+        val link = "https://nyanpixel.my.id/u/$username"
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, "Lihat profil @$username di Socializee: $link")
@@ -255,7 +299,7 @@ class ProfileFragment : Fragment() {
         try {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         } catch (e: Exception) {
-            Toast.makeText(context, "Tidak bisa membuka browser", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Error while trying opening browser.", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -285,7 +329,7 @@ class ProfileFragment : Fragment() {
             val name = binding.etDisplayName.text.toString().trim()
             val bio  = binding.etBio.text.toString().trim()
             if (name.isBlank()) {
-                Toast.makeText(context, "Nama tidak boleh kosong", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Name can't be empty!", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             authViewModel.updateProfile(name, bio, selectedAvatarFile)
@@ -309,23 +353,22 @@ class ProfileFragment : Fragment() {
         val isEditing = binding.editContainer.visibility == View.VISIBLE
         if (isEditing) {
             binding.editContainer.visibility = View.GONE
-            binding.btnEditProfile.text = "Edit Profil"
+            binding.btnEditProfile.text = "Edit Profile"
             selectedAvatarFile = null
         } else {
             binding.editContainer.visibility = View.VISIBLE
-            binding.btnEditProfile.text = "Batal"
+            binding.btnEditProfile.text = "Cancel"
         }
     }
 
     private fun setupRecyclerView() {
         postAdapter = PostAdapter(
             currentUserId = sessionManager.getUserId() ?: "",
-            // FIX 3: semua interaksi sekarang diteruskan ke feedViewModel (activity scope)
+            isAdmin = sessionManager.isAdmin(),          // [NEW]
             onLike       = { post, pos -> feedViewModel.toggleLike(post, pos) },
             onComment    = { post -> openComments(post) },
             onRepost     = { post -> feedViewModel.toggleRepost(post) },
             onUserClick  = { userId ->
-                // Jangan navigasi ke profil yang sama
                 if (userId != targetUserId) openProfile(userId)
             },
             onDelete     = { post, _ -> confirmDelete(post) },
@@ -407,9 +450,9 @@ class ProfileFragment : Fragment() {
                     selectedAvatarFile = null
                     sessionManager.saveUser(state.user)
                     binding.editContainer.visibility = View.GONE
-                    binding.btnEditProfile.text = "Edit Profil"
+                    binding.btnEditProfile.text = "Edit Profile"
                     profileViewModel.loadProfile(targetUserId!!)
-                    Toast.makeText(context, "Profil diperbarui!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Profile changed!", Toast.LENGTH_SHORT).show()
                 }
                 is ProfileUpdateState.Error -> {
                     binding.progressBar.visibility = View.GONE
@@ -418,29 +461,42 @@ class ProfileFragment : Fragment() {
             }
         }
 
-        // FIX 4: observe perubahan like/repost dari feedViewModel
-        // agar tampilan post di profile ikut update saat di-like/repost
         feedViewModel.posts.observe(viewLifecycleOwner) { feedPosts ->
             val currentList = postAdapter.currentList
             if (currentList.isEmpty()) return@observe
-            // Update item yang berubah saja (match by id)
             val updated = currentList.map { profilePost ->
                 feedPosts.find { it.id == profilePost.id } ?: profilePost
             }
             if (updated != currentList) postAdapter.submitList(updated)
         }
+
+        // [NEW] Observe banned event dari FeedViewModel
+        feedViewModel.bannedEvent.observe(viewLifecycleOwner) { event ->
+            event.getContentIfNotHandled()?.let { message ->
+                handleBanned(message)
+            }
+        }
+    }
+
+    // [NEW] Paksa logout saat kena ban (misal admin ban dirinya sendiri — edge case)
+    private fun handleBanned(message: String) {
+        sessionManager.logout()
+        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+        startActivity(Intent(requireContext(), AuthActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        })
     }
 
     private fun updateFollowButton(isFollowing: Boolean) {
         binding.btnFollow.isSelected = isFollowing
         if (isFollowing) {
-            binding.btnFollow.text = "Diikuti"
+            binding.btnFollow.text = "Following"
             binding.btnFollow.setBackgroundColor(requireContext().getColor(android.R.color.transparent))
             binding.btnFollow.setStrokeColorResource(R.color.text_secondary)
             binding.btnFollow.setTextColor(requireContext().getColorStateList(R.color.text_secondary))
             binding.btnFollow.strokeWidth = 2
         } else {
-            binding.btnFollow.text = "Ikuti"
+            binding.btnFollow.text = "Follow"
             binding.btnFollow.setBackgroundColor(requireContext().getColor(R.color.primary))
             binding.btnFollow.strokeWidth = 0
             binding.btnFollow.setTextColor(requireContext().getColorStateList(android.R.color.white))
@@ -463,20 +519,20 @@ class ProfileFragment : Fragment() {
                 else R.id.action_profileSelf_to_comments
                 findNavController().navigate(fallback, bundle)
             } catch (e2: Exception) {
-                Toast.makeText(context, "Tidak bisa membuka komentar", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Can't open the comments.", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     private fun openProfile(userId: String) {
-        if (userId == targetUserId) return  // jangan navigasi ke diri sendiri
+        if (userId == targetUserId) return
         val bundle = Bundle().apply { putString("userId", userId) }
         val actionId = if (isOwnProfile) R.id.action_profileSelf_to_profile
         else R.id.action_profile_to_profile
         try {
             findNavController().navigate(actionId, bundle)
         } catch (e: Exception) {
-            Toast.makeText(context, "Tidak bisa membuka profil", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Can't open the profile.", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -495,22 +551,21 @@ class ProfileFragment : Fragment() {
                 else R.id.action_profileSelf_to_imageViewer
                 findNavController().navigate(fallback, bundle)
             } catch (e2: Exception) {
-                Toast.makeText(context, "Tidak bisa membuka gambar", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Can't open the media.", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     private fun confirmDelete(post: Post) {
         AlertDialog.Builder(requireContext())
-            .setTitle("Hapus Post")
-            .setMessage("Yakin ingin menghapus post ini?")
-            .setPositiveButton("Hapus") { _, _ ->
+            .setTitle("Delete Post")
+            .setMessage("Are you sure to delete this post?")
+            .setPositiveButton("Delete") { _, _ ->
                 feedViewModel.deletePost(post.id)
-                // Hapus juga dari list profil secara lokal
                 val updated = postAdapter.currentList.filter { it.id != post.id }
                 postAdapter.submitList(updated)
             }
-            .setNegativeButton("Batal", null)
+            .setNegativeButton("Cancel", null)
             .show()
     }
 
@@ -536,5 +591,6 @@ class ProfileFragment : Fragment() {
         private const val MENU_BLOCK_USER    = 10
         private const val MENU_COPY_LINK     = 11
         private const val MENU_SHARE_PROFILE = 12
+        private const val MENU_BAN_USER      = 13  // [NEW]
     }
 }

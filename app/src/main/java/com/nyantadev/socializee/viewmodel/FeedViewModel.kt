@@ -22,6 +22,18 @@ sealed class CreatePostState {
     data class Error(val message: String) : CreatePostState()
 }
 
+// [NEW] One-shot event wrapper agar observer tidak dipicu ulang saat rotate
+class Event<out T>(private val content: T) {
+    private var hasBeenHandled = false
+    fun getContentIfNotHandled(): T? {
+        return if (hasBeenHandled) null
+        else { hasBeenHandled = true; content }
+    }
+}
+
+// [NEW] Alias supaya import di Fragment lebih jelas
+typealias BannedEvent = Event<String>
+
 class FeedViewModel(private val repo: AppRepository) : ViewModel() {
 
     private val _feedState = MutableLiveData<FeedState>()
@@ -39,10 +51,32 @@ class FeedViewModel(private val repo: AppRepository) : ViewModel() {
     private val _explorePosts = MutableLiveData<MutableList<Post>>(mutableListOf())
     val explorePosts: LiveData<MutableList<Post>> = _explorePosts
 
+    // [NEW] Event banned — di-observe oleh Feed/ExploreFragment untuk trigger logout
+    private val _bannedEvent = MutableLiveData<BannedEvent>()
+    val bannedEvent: LiveData<BannedEvent> = _bannedEvent
+
     private var feedPage = 1
     private var explorePage = 1
     var isFeedLoadingMore = false
     var isExploreLoadingMore = false
+
+    // ── Helper: cek apakah response adalah banned ─────────────────────────────
+    private fun <T> checkBanned(response: retrofit2.Response<T>): Boolean {
+        if (response.code() == 403) {
+            // Parse body untuk cek field "banned": true
+            try {
+                val errorBody = response.errorBody()?.string() ?: ""
+                if (errorBody.contains("\"banned\":true")) {
+                    val message = Regex("\"message\":\"([^\"]+)\"")
+                        .find(errorBody)?.groupValues?.get(1)
+                        ?: "Akun kamu telah dibanned oleh admin."
+                    _bannedEvent.postValue(BannedEvent(message))
+                    return true
+                }
+            } catch (_: Exception) {}
+        }
+        return false
+    }
 
     // ── Feed ──────────────────────────────────────────────────────────────────
 
@@ -53,6 +87,7 @@ class FeedViewModel(private val repo: AppRepository) : ViewModel() {
             isFeedLoadingMore = true
             try {
                 val res = repo.getFeed(feedPage)
+                if (checkBanned(res)) return@launch
                 if (res.isSuccessful && res.body()?.success == true) {
                     val newPosts = res.body()!!.posts ?: emptyList()
                     if (feedPage == 1) {
@@ -83,6 +118,7 @@ class FeedViewModel(private val repo: AppRepository) : ViewModel() {
             isExploreLoadingMore = true
             try {
                 val res = repo.getExplore(explorePage)
+                if (checkBanned(res)) return@launch
                 if (res.isSuccessful && res.body()?.success == true) {
                     val newPosts = res.body()!!.posts ?: emptyList()
                     if (explorePage == 1) {
@@ -111,6 +147,7 @@ class FeedViewModel(private val repo: AppRepository) : ViewModel() {
             _createPostState.value = CreatePostState.Loading
             try {
                 val res = repo.createPost(content, imageFiles)
+                if (checkBanned(res)) return@launch
                 if (res.isSuccessful && res.body()?.success == true) {
                     val post = res.body()!!.post!!
                     val current = _posts.value ?: mutableListOf()
@@ -133,6 +170,7 @@ class FeedViewModel(private val repo: AppRepository) : ViewModel() {
             try {
                 val targetId = post.originalPostId?.takeIf { post.isRepost } ?: post.id
                 val res = repo.toggleLike(targetId)
+                if (checkBanned(res)) return@launch
                 if (res.isSuccessful && res.body()?.success == true) {
                     val body = res.body()!!
                     updatePostLike(_posts, post.id, body.liked!!, body.likesCount!!)
@@ -157,34 +195,25 @@ class FeedViewModel(private val repo: AppRepository) : ViewModel() {
 
     // ── Toggle Repost ─────────────────────────────────────────────────────────
 
-    /**
-     * Toggle repost. Jika berhasil:
-     * - Perbarui is_reposted & reposts_count di semua baris terkait
-     * - Jika repost baru: tambahkan baris repost ke atas feed
-     * - Jika unrepost: hapus baris repost dari feed lokal
-     */
     fun toggleRepost(post: Post) {
         viewModelScope.launch {
             try {
-                // Selalu repost ke post asli
                 val targetId = if (post.isRepost && post.originalPostId != null)
                     post.originalPostId else post.id
 
                 val res = repo.toggleRepost(targetId)
+                if (checkBanned(res)) return@launch
                 if (res.isSuccessful && res.body()?.success == true) {
                     val body      = res.body()!!
                     val reposted  = body.reposted ?: return@launch
                     val newCount  = body.repostsCount ?: 0
 
                     if (reposted) {
-                        // ── Optimistic: update flag di post asli & semua salinannya ──
                         updatePostRepostStatus(_posts.value, targetId, true, newCount)
                         updatePostRepostStatus(_explorePosts.value, targetId, true, newCount)
                         _posts.value = _posts.value
                         _explorePosts.value = _explorePosts.value
-                        // Catatan: baris repost baru hanya muncul setelah swipe refresh manual
                     } else {
-                        // ── Optimistic: hapus baris repost dari list lokal ─────────
                         updatePostRepostStatus(_posts.value, targetId, false, newCount)
                         updatePostRepostStatus(_explorePosts.value, targetId, false, newCount)
                         removeRepostRows(_posts.value, targetId)
@@ -204,12 +233,10 @@ class FeedViewModel(private val repo: AppRepository) : ViewModel() {
         count: Int
     ) {
         list ?: return
-        // Update post asli
         val idx = list.indexOfFirst { it.id == originalPostId }
         if (idx >= 0) {
             list[idx] = list[idx].copy(isReposted = reposted, repostsCount = count)
         }
-        // Update semua baris repost yang merujuk ke post ini
         list.forEachIndexed { i, p ->
             if (p.originalPostId == originalPostId) {
                 list[i] = p.copy(isReposted = reposted, repostsCount = count)
@@ -217,7 +244,6 @@ class FeedViewModel(private val repo: AppRepository) : ViewModel() {
         }
     }
 
-    /** Hapus baris repost dari list (saat unrepost) */
     private fun removeRepostRows(list: MutableList<Post>?, originalPostId: String) {
         list?.removeAll { it.isRepost && it.originalPostId == originalPostId }
     }
@@ -227,8 +253,8 @@ class FeedViewModel(private val repo: AppRepository) : ViewModel() {
     fun deletePost(postId: String) {
         viewModelScope.launch {
             try {
-                repo.deletePost(postId)
-                // Hapus post + semua baris repost-nya dari list lokal
+                val res = repo.deletePost(postId)
+                if (checkBanned(res)) return@launch
                 _posts.value?.let { list ->
                     list.removeAll { it.id == postId || it.originalPostId == postId }
                     _posts.value = list

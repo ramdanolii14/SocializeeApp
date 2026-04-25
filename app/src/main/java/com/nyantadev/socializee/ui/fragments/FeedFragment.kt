@@ -1,5 +1,6 @@
 package com.nyantadev.socializee.ui.fragments
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -16,8 +17,10 @@ import com.nyantadev.socializee.api.RetrofitClient
 import com.nyantadev.socializee.databinding.FragmentFeedBinding
 import com.nyantadev.socializee.models.Post
 import com.nyantadev.socializee.repository.AppRepository
+import com.nyantadev.socializee.ui.AuthActivity
 import com.nyantadev.socializee.ui.adapters.PostAdapter
 import com.nyantadev.socializee.utils.SessionManager
+import com.nyantadev.socializee.viewmodel.BannedEvent
 import com.nyantadev.socializee.viewmodel.FeedState
 import com.nyantadev.socializee.viewmodel.FeedViewModel
 import com.nyantadev.socializee.viewmodel.ViewModelFactory
@@ -56,6 +59,7 @@ class FeedFragment : Fragment() {
     private fun setupRecyclerView() {
         postAdapter = PostAdapter(
             currentUserId = sessionManager.getUserId() ?: "",
+            isAdmin = sessionManager.isAdmin(),          // [NEW]
             onLike = { post, pos -> viewModel.toggleLike(post, pos) },
             onComment = { post -> openComments(post) },
             onRepost = { post -> viewModel.toggleRepost(post) },
@@ -112,6 +116,22 @@ class FeedFragment : Fragment() {
         viewModel.posts.observe(viewLifecycleOwner) { posts ->
             postAdapter.submitList(posts.toList())
         }
+
+        // [NEW] Observasi event banned — paksa logout
+        viewModel.bannedEvent.observe(viewLifecycleOwner) { event ->
+            event.getContentIfNotHandled()?.let { message ->
+                handleBanned(message)
+            }
+        }
+    }
+
+    // [NEW] Paksa logout + tampilkan pesan banned
+    private fun handleBanned(message: String) {
+        sessionManager.logout()
+        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+        startActivity(Intent(requireContext(), AuthActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        })
     }
 
     private fun openComments(post: Post) {
