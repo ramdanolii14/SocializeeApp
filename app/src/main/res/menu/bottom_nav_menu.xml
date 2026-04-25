@@ -12,6 +12,11 @@
         android:title="Explore"/>
 
     <item
+        android:id="@+id/notificationFragment"
+        android:icon="@drawable/ic_notification"
+        android:title="Notifikasi"/>
+
+    <item
         android:id="@+id/profileSelfFragment"
         android:icon="@drawable/ic_person"
         android:title="Profile"/>

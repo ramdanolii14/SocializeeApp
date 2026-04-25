@@ -33,4 +33,16 @@
     <color name="purple_700">#FF3700B3</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
+
+    <!-- Warna aktif tombol Repost (hijau seperti Twitter/X) -->
+    <color name="repost_active">#00BA7C</color>
+
+    <!-- Alias green_repost — dipakai setColorFilter() di adapter untuk ivRepost aktif -->
+    <color name="green_repost">#00BA7C</color>
+
+    <!-- Warna aktif tombol Like (merah) — pastikan ini sudah ada -->
+    <color name="like_active">#F91880</color>
+
+    <!-- Warna ikon default (abu-abu) — pastikan ini sudah ada -->
+    <color name="icon_default">#757575</color>
 </resources>

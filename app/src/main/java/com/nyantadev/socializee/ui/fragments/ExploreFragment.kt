@@ -82,6 +82,7 @@ class ExploreFragment : Fragment() {
             currentUserId = sessionManager.getUserId() ?: "",
             onLike = { post, pos -> feedViewModel.toggleLike(post, pos) },
             onComment = { post -> openComments(post) },
+            onRepost = { post -> feedViewModel.toggleRepost(post) },
             onUserClick = { userId -> openProfile(userId) },
             onDelete = { post, _ -> confirmDelete(post) },
             onImageClick = { urls, idx -> openImageViewer(urls, idx) }

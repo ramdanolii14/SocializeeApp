@@ -43,6 +43,20 @@
             app:destination="@id/imageViewerFragment"/>
     </fragment>
 
+
+    <!-- Notifications (bottom nav) -->
+    <fragment
+        android:id="@+id/notificationFragment"
+        android:name="com.nyantadev.socializee.ui.fragments.NotificationFragment"
+        android:label="Notifikasi">
+        <action
+            android:id="@+id/action_notificationFragment_to_profile"
+            app:destination="@id/profileFragment"/>
+        <action
+            android:id="@+id/action_notificationFragment_to_comments"
+            app:destination="@id/commentsFragment"/>
+    </fragment>
+
     <!-- Profile (self via bottom nav) -->
     <fragment
         android:id="@+id/profileSelfFragment"
@@ -54,6 +68,9 @@
         <action
             android:id="@+id/action_profileSelf_to_imageViewer"
             app:destination="@id/imageViewerFragment"/>
+        <action
+            android:id="@+id/action_profileSelf_to_profile"
+            app:destination="@id/profileFragment"/>
     </fragment>
 
     <!-- Profile (others) -->
@@ -71,6 +88,9 @@
         <action
             android:id="@+id/action_profile_to_imageViewer"
             app:destination="@id/imageViewerFragment"/>
+        <action
+            android:id="@+id/action_profile_to_profile"
+            app:destination="@id/profileFragment"/>
     </fragment>
 
     <!-- Create Post -->

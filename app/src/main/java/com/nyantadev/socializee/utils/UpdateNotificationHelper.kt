@@ -18,49 +18,58 @@ object UpdateNotificationHelper {
     private const val NOTIF_ID     = 1001
 
     fun showUpdateNotification(context: Context, info: UpdateChecker.UpdateInfo) {
+        // Buat channel dulu (wajib Android 8+, no-op di bawahnya)
         createChannel(context)
 
-        // Tap notifikasi → langsung buka GitHub release di browser
-        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(info.releaseUrl)).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            0,
-            browserIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)   // ganti dengan ic_notification jika ada
-            .setContentTitle("✨ Pembaruan Tersedia — v${info.latestVersion}")
-            .setContentText("Versi baru Socializee sudah rilis! Ketuk untuk download.")
-            .setStyle(
-                NotificationCompat.BigTextStyle()
-                    .bigText(
-                        "Versi baru Socializee v${info.latestVersion} sudah tersedia.\n\n" +
-                                if (info.releaseNotes.isNotBlank())
-                                    "Apa yang baru:\n${info.releaseNotes.take(200)}"
-                                else
-                                    "Ketuk untuk melihat detail dan download di GitHub."
-                    )
-            )
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)            // notif hilang setelah ditap
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            // Tombol aksi langsung di notifikasi
-            .addAction(
-                R.drawable.ic_launcher_foreground,
-                "Download Sekarang",
-                pendingIntent
-            )
-            .build()
-
-        // Cek permission POST_NOTIFICATIONS (Android 13+)
+        // Cek izin notifikasi (Android 13+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             if (!nm.areNotificationsEnabled()) return
         }
+
+        // Tap notifikasi → buka GitHub release di browser
+        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(info.releaseUrl)).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context, 0, browserIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Action button "Download Sekarang"
+        val downloadAction = NotificationCompat.Action.Builder(
+            R.drawable.ic_launcher_foreground,
+            "Download Sekarang",
+            pendingIntent
+        ).build()
+
+        val releaseNotesTrimmed = if (info.releaseNotes.isNotBlank())
+            "\n\nApa yang baru:\n${info.releaseNotes.take(300)}"
+        else ""
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("✨ Update Tersedia — v${info.latestVersion}")
+            .setContentText("Versi baru Socializee sudah rilis! Ketuk untuk download.")
+            // BigText agar isi changelog terlihat saat notif dibuka
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText(
+                        "Socializee v${info.latestVersion} sudah tersedia.$releaseNotesTrimmed"
+                    )
+                    .setBigContentTitle("✨ Update Tersedia — v${info.latestVersion}")
+                    .setSummaryText("Ketuk untuk download")
+            )
+            .setContentIntent(pendingIntent)
+            .addAction(downloadAction)
+            .setAutoCancel(true)
+            // ── Heads-up (muncul di atas layar seperti notif pesan) ──────────
+            .setPriority(NotificationCompat.PRIORITY_HIGH)   // ← kunci heads-up
+            .setDefaults(NotificationCompat.DEFAULT_ALL)     // suara + getar
+            // ─────────────────────────────────────────────────────────────────
+            .setColor(context.getColor(R.color.primary))
+            .setColorized(true)
+            .build()
 
         NotificationManagerCompat.from(context).notify(NOTIF_ID, notification)
     }
@@ -70,9 +79,12 @@ object UpdateNotificationHelper {
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 CHANNEL_NAME,
-                NotificationManager.IMPORTANCE_DEFAULT
+                // IMPORTANCE_HIGH wajib agar heads-up muncul di Android 8+
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Notifikasi ketika ada versi baru aplikasi"
+                description        = "Notifikasi ketika ada versi baru aplikasi"
+                enableVibration(true)
+                enableLights(true)
             }
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             nm.createNotificationChannel(channel)

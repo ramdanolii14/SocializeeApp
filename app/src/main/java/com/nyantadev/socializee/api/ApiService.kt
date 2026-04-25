@@ -59,6 +59,9 @@ interface ApiService {
     @POST("posts/{id}/like")
     suspend fun toggleLike(@Path("id") id: String): Response<LikeResponse>
 
+    @POST("posts/{id}/repost")
+    suspend fun toggleRepost(@Path("id") id: String): Response<RepostResponse>
+
     @GET("posts/{id}/comments")
     suspend fun getComments(@Path("id") id: String): Response<CommentsResponse>
 
@@ -83,4 +86,26 @@ interface ApiService {
 
     @GET("users/{id}/following")
     suspend fun getFollowing(@Path("id") id: String): Response<UsersResponse>
+
+    // ======= NOTIFICATIONS =======
+    @GET("notifications")
+    suspend fun getNotifications(
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 30
+    ): Response<NotificationsResponse>
+
+    @GET("notifications/unread-count")
+    suspend fun getUnreadCount(): Response<UnreadCountResponse>
+
+    @PATCH("notifications/read-all")
+    suspend fun markAllRead(): Response<GenericResponse>
+
+    @PATCH("notifications/{id}/read")
+    suspend fun markRead(@Path("id") id: String): Response<GenericResponse>
+
+    @POST("notifications/device-token")
+    suspend fun registerDeviceToken(@Body request: DeviceTokenRequest): Response<GenericResponse>
+
+    @DELETE("notifications/device-token")
+    suspend fun removeDeviceToken(@Body request: DeviceTokenRequest): Response<GenericResponse>
 }

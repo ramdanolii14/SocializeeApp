@@ -44,6 +44,8 @@ class FeedViewModel(private val repo: AppRepository) : ViewModel() {
     var isFeedLoadingMore = false
     var isExploreLoadingMore = false
 
+    // ── Feed ──────────────────────────────────────────────────────────────────
+
     fun loadFeed(refresh: Boolean = false) {
         if (refresh) feedPage = 1
         viewModelScope.launch {
@@ -71,6 +73,8 @@ class FeedViewModel(private val repo: AppRepository) : ViewModel() {
             }
         }
     }
+
+    // ── Explore ───────────────────────────────────────────────────────────────
 
     fun loadExplore(refresh: Boolean = false) {
         if (refresh) explorePage = 1
@@ -100,6 +104,8 @@ class FeedViewModel(private val repo: AppRepository) : ViewModel() {
         }
     }
 
+    // ── Buat Post ─────────────────────────────────────────────────────────────
+
     fun createPost(content: String, imageFiles: List<File>) {
         viewModelScope.launch {
             _createPostState.value = CreatePostState.Loading
@@ -107,7 +113,6 @@ class FeedViewModel(private val repo: AppRepository) : ViewModel() {
                 val res = repo.createPost(content, imageFiles)
                 if (res.isSuccessful && res.body()?.success == true) {
                     val post = res.body()!!.post!!
-                    // Prepend to feed
                     val current = _posts.value ?: mutableListOf()
                     current.add(0, post)
                     _posts.value = current
@@ -121,38 +126,117 @@ class FeedViewModel(private val repo: AppRepository) : ViewModel() {
         }
     }
 
+    // ── Toggle Like ───────────────────────────────────────────────────────────
+
     fun toggleLike(post: Post, position: Int) {
         viewModelScope.launch {
             try {
-                val res = repo.toggleLike(post.id)
+                val targetId = post.originalPostId?.takeIf { post.isRepost } ?: post.id
+                val res = repo.toggleLike(targetId)
                 if (res.isSuccessful && res.body()?.success == true) {
                     val body = res.body()!!
-                    // Update in feed list
-                    updatePostLike(_posts.value, post.id, body.liked!!, body.likesCount!!)
-                    updatePostLike(_explorePosts.value, post.id, body.liked, body.likesCount)
+                    updatePostLike(_posts, post.id, body.liked!!, body.likesCount!!)
+                    updatePostLike(_explorePosts, post.id, body.liked, body.likesCount)
+                    if (post.isRepost && post.originalPostId != null) {
+                        updatePostLike(_posts, post.originalPostId, body.liked, body.likesCount)
+                        updatePostLike(_explorePosts, post.originalPostId, body.liked, body.likesCount)
+                    }
                 }
             } catch (e: Exception) { /* silent fail */ }
         }
     }
 
-    private fun updatePostLike(list: MutableList<Post>?, postId: String, liked: Boolean, count: Int) {
-        list?.let { posts ->
-            val idx = posts.indexOfFirst { it.id == postId }
-            if (idx >= 0) {
-                posts[idx] = posts[idx].copy(isLiked = liked, likesCount = count)
-                _posts.value = _posts.value // trigger observer
+    private fun updatePostLike(liveData: MutableLiveData<MutableList<Post>>, postId: String, liked: Boolean, count: Int) {
+        val list = liveData.value ?: return
+        val idx = list.indexOfFirst { it.id == postId }
+        if (idx >= 0) {
+            list[idx] = list[idx].copy(isLiked = liked, likesCount = count)
+            liveData.value = list
+        }
+    }
+
+    // ── Toggle Repost ─────────────────────────────────────────────────────────
+
+    /**
+     * Toggle repost. Jika berhasil:
+     * - Perbarui is_reposted & reposts_count di semua baris terkait
+     * - Jika repost baru: tambahkan baris repost ke atas feed
+     * - Jika unrepost: hapus baris repost dari feed lokal
+     */
+    fun toggleRepost(post: Post) {
+        viewModelScope.launch {
+            try {
+                // Selalu repost ke post asli
+                val targetId = if (post.isRepost && post.originalPostId != null)
+                    post.originalPostId else post.id
+
+                val res = repo.toggleRepost(targetId)
+                if (res.isSuccessful && res.body()?.success == true) {
+                    val body      = res.body()!!
+                    val reposted  = body.reposted ?: return@launch
+                    val newCount  = body.repostsCount ?: 0
+
+                    if (reposted) {
+                        // ── Optimistic: update flag di post asli & semua salinannya ──
+                        updatePostRepostStatus(_posts.value, targetId, true, newCount)
+                        updatePostRepostStatus(_explorePosts.value, targetId, true, newCount)
+                        _posts.value = _posts.value
+                        _explorePosts.value = _explorePosts.value
+                        // Catatan: baris repost baru hanya muncul setelah swipe refresh manual
+                    } else {
+                        // ── Optimistic: hapus baris repost dari list lokal ─────────
+                        updatePostRepostStatus(_posts.value, targetId, false, newCount)
+                        updatePostRepostStatus(_explorePosts.value, targetId, false, newCount)
+                        removeRepostRows(_posts.value, targetId)
+                        removeRepostRows(_explorePosts.value, targetId)
+                        _posts.value = _posts.value
+                        _explorePosts.value = _explorePosts.value
+                    }
+                }
+            } catch (e: Exception) { /* silent fail */ }
+        }
+    }
+
+    private fun updatePostRepostStatus(
+        list: MutableList<Post>?,
+        originalPostId: String,
+        reposted: Boolean,
+        count: Int
+    ) {
+        list ?: return
+        // Update post asli
+        val idx = list.indexOfFirst { it.id == originalPostId }
+        if (idx >= 0) {
+            list[idx] = list[idx].copy(isReposted = reposted, repostsCount = count)
+        }
+        // Update semua baris repost yang merujuk ke post ini
+        list.forEachIndexed { i, p ->
+            if (p.originalPostId == originalPostId) {
+                list[i] = p.copy(isReposted = reposted, repostsCount = count)
             }
         }
     }
+
+    /** Hapus baris repost dari list (saat unrepost) */
+    private fun removeRepostRows(list: MutableList<Post>?, originalPostId: String) {
+        list?.removeAll { it.isRepost && it.originalPostId == originalPostId }
+    }
+
+    // ── Hapus Post ────────────────────────────────────────────────────────────
 
     fun deletePost(postId: String) {
         viewModelScope.launch {
             try {
                 repo.deletePost(postId)
-                _posts.value?.removeAll { it.id == postId }
-                _posts.value = _posts.value
-                _explorePosts.value?.removeAll { it.id == postId }
-                _explorePosts.value = _explorePosts.value
+                // Hapus post + semua baris repost-nya dari list lokal
+                _posts.value?.let { list ->
+                    list.removeAll { it.id == postId || it.originalPostId == postId }
+                    _posts.value = list
+                }
+                _explorePosts.value?.let { list ->
+                    list.removeAll { it.id == postId || it.originalPostId == postId }
+                    _explorePosts.value = list
+                }
             } catch (e: Exception) { /* silent fail */ }
         }
     }

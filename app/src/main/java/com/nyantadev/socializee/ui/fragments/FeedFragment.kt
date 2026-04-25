@@ -58,6 +58,7 @@ class FeedFragment : Fragment() {
             currentUserId = sessionManager.getUserId() ?: "",
             onLike = { post, pos -> viewModel.toggleLike(post, pos) },
             onComment = { post -> openComments(post) },
+            onRepost = { post -> viewModel.toggleRepost(post) },
             onUserClick = { userId -> openProfile(userId) },
             onDelete = { post, _ -> confirmDelete(post) },
             onImageClick = { urls, idx -> openImageViewer(urls, idx) }

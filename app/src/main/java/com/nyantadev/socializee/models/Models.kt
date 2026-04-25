@@ -31,11 +31,34 @@ data class Post(
     @SerializedName("reposts_count") val repostsCount: Int = 0,
     val images: List<PostImage> = emptyList(),
     @SerializedName("created_at") val createdAt: String = "",
-    // Joined from users table
+
+    // Penulis konten asli
     val username: String = "",
     @SerializedName("display_name") val displayName: String = "",
     @SerializedName("avatar_url") val avatarUrl: String = "",
-    @SerializedName("is_liked") var isLiked: Boolean = false
+
+    // Status interaksi user saat ini
+    @SerializedName("is_liked") var isLiked: Boolean = false,
+    @SerializedName("is_reposted") var isReposted: Boolean = false,
+
+    // ── Kolom repost baru ──────────────────────────────────────────────────
+    /** TRUE jika baris ini adalah repost (bukan post asli) */
+    @SerializedName("is_repost") val isRepost: Boolean = false,
+
+    /** UUID post asli yang di-repost */
+    @SerializedName("original_post_id") val originalPostId: String? = null,
+
+    /** UUID user yang melakukan repost */
+    @SerializedName("reposted_by_user_id") val repostedByUserId: String? = null,
+
+    /** Username orang yang merepost — untuk label "X merepost" */
+    @SerializedName("reposted_by_username") val repostedByUsername: String? = null,
+
+    /** Display name orang yang merepost */
+    @SerializedName("reposted_by_display_name") val repostedByDisplayName: String? = null,
+
+    /** Avatar orang yang merepost */
+    @SerializedName("reposted_by_avatar_url") val repostedByAvatarUrl: String? = null,
 )
 
 data class Comment(
@@ -49,7 +72,7 @@ data class Comment(
     @SerializedName("created_at") val createdAt: String = ""
 )
 
-// API Request Models
+// ── API Request Models ────────────────────────────────────────────────────────
 data class RegisterRequest(
     val username: String,
     val email: String,
@@ -66,7 +89,7 @@ data class CommentRequest(
     val content: String
 )
 
-// API Response Models
+// ── API Response Models ───────────────────────────────────────────────────────
 data class AuthResponse(
     val success: Boolean,
     val token: String?,
@@ -121,6 +144,13 @@ data class FollowResponse(
     val success: Boolean,
     val following: Boolean?,
     @SerializedName("followers_count") val followersCount: Int?,
+    val message: String?
+)
+
+data class RepostResponse(
+    val success: Boolean,
+    val reposted: Boolean?,
+    @SerializedName("reposts_count") val repostsCount: Int?,
     val message: String?
 )
 

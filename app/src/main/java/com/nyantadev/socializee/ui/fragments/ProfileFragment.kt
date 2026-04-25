@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.view.ContextThemeWrapper
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -28,7 +29,9 @@ import com.nyantadev.socializee.ui.MainActivity
 import com.nyantadev.socializee.ui.adapters.PostAdapter
 import com.nyantadev.socializee.utils.SessionManager
 import com.nyantadev.socializee.utils.UpdateChecker
+import com.nyantadev.socializee.utils.UpdateNotificationHelper
 import com.nyantadev.socializee.viewmodel.AuthViewModel
+import com.nyantadev.socializee.viewmodel.FeedViewModel          // ← TAMBAH
 import com.nyantadev.socializee.viewmodel.ProfileState
 import com.nyantadev.socializee.viewmodel.ProfileViewModel
 import com.nyantadev.socializee.viewmodel.ProfileUpdateState
@@ -44,6 +47,7 @@ class ProfileFragment : Fragment() {
 
     private lateinit var profileViewModel: ProfileViewModel
     private lateinit var authViewModel: AuthViewModel
+    private lateinit var feedViewModel: FeedViewModel              // ← TAMBAH
     private lateinit var sessionManager: SessionManager
     private lateinit var postAdapter: PostAdapter
 
@@ -104,8 +108,11 @@ class ProfileFragment : Fragment() {
         val repo = AppRepository(RetrofitClient.getApiService())
         val factory = ViewModelFactory(repo)
 
-        profileViewModel = ViewModelProvider(this, factory)[ProfileViewModel::class.java]
-        authViewModel = ViewModelProvider(this, factory)[AuthViewModel::class.java]
+        // FIX 1: profileViewModel pakai requireActivity() agar shared dengan Explore
+        profileViewModel = ViewModelProvider(requireActivity(), factory)[ProfileViewModel::class.java]
+        authViewModel    = ViewModelProvider(this, factory)[AuthViewModel::class.java]
+        // FIX 2: feedViewModel pakai requireActivity() — sama instance dengan Feed & Explore
+        feedViewModel    = ViewModelProvider(requireActivity(), factory)[FeedViewModel::class.java]
 
         targetUserId = arguments?.getString("userId") ?: sessionManager.getUserId()
         isOwnProfile = targetUserId == sessionManager.getUserId()
@@ -125,6 +132,9 @@ class ProfileFragment : Fragment() {
     private fun checkForUpdate() {
         viewLifecycleOwner.lifecycleScope.launch {
             val info = UpdateChecker.check(BuildConfig.VERSION_NAME) ?: return@launch
+
+            UpdateNotificationHelper.showUpdateNotification(requireContext(), info)
+
             val snackbar = Snackbar.make(
                 binding.root,
                 "✨ Versi ${info.latestVersion} tersedia! Kamu masih pakai ${BuildConfig.VERSION_NAME}.",
@@ -142,9 +152,6 @@ class ProfileFragment : Fragment() {
 
     private fun showMoreOptionsMenu() {
         val anchor = binding.ivMoreOptions
-
-        // ContextThemeWrapper memaksa PopupMenu pakai tema app (DayNight),
-        // sehingga background & teks otomatis ikut light / dark mode.
         val themedContext = ContextThemeWrapper(requireContext(), R.style.Theme_Socializee)
         val popup = PopupMenu(themedContext, anchor)
 
@@ -192,7 +199,7 @@ class ProfileFragment : Fragment() {
     private fun showAboutDialog() {
         val version = BuildConfig.VERSION_NAME
         val versionCode = BuildConfig.VERSION_CODE
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+        AlertDialog.Builder(requireContext())
             .setTitle("About Socializee")
             .setMessage(
                 "Versi: $version ($versionCode)\n\n" +
@@ -209,7 +216,7 @@ class ProfileFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             val info = UpdateChecker.check(BuildConfig.VERSION_NAME)
             if (info != null) {
-                androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                AlertDialog.Builder(requireContext())
                     .setTitle("🎉 Pembaruan Tersedia!")
                     .setMessage(
                         "Versi terbaru: ${info.latestVersion}\n" +
@@ -313,11 +320,16 @@ class ProfileFragment : Fragment() {
     private fun setupRecyclerView() {
         postAdapter = PostAdapter(
             currentUserId = sessionManager.getUserId() ?: "",
-            onLike        = { _, _ -> },
-            onComment     = { post -> openComments(post) },
-            onUserClick   = { },
-            onDelete      = { _, _ -> },
-            onImageClick  = { urls, idx -> openImageViewer(urls, idx) }
+            // FIX 3: semua interaksi sekarang diteruskan ke feedViewModel (activity scope)
+            onLike       = { post, pos -> feedViewModel.toggleLike(post, pos) },
+            onComment    = { post -> openComments(post) },
+            onRepost     = { post -> feedViewModel.toggleRepost(post) },
+            onUserClick  = { userId ->
+                // Jangan navigasi ke profil yang sama
+                if (userId != targetUserId) openProfile(userId)
+            },
+            onDelete     = { post, _ -> confirmDelete(post) },
+            onImageClick = { urls, idx -> openImageViewer(urls, idx) }
         )
         binding.rvPosts.apply {
             layoutManager = LinearLayoutManager(context)
@@ -405,6 +417,18 @@ class ProfileFragment : Fragment() {
                 }
             }
         }
+
+        // FIX 4: observe perubahan like/repost dari feedViewModel
+        // agar tampilan post di profile ikut update saat di-like/repost
+        feedViewModel.posts.observe(viewLifecycleOwner) { feedPosts ->
+            val currentList = postAdapter.currentList
+            if (currentList.isEmpty()) return@observe
+            // Update item yang berubah saja (match by id)
+            val updated = currentList.map { profilePost ->
+                feedPosts.find { it.id == profilePost.id } ?: profilePost
+            }
+            if (updated != currentList) postAdapter.submitList(updated)
+        }
     }
 
     private fun updateFollowButton(isFollowing: Boolean) {
@@ -444,6 +468,18 @@ class ProfileFragment : Fragment() {
         }
     }
 
+    private fun openProfile(userId: String) {
+        if (userId == targetUserId) return  // jangan navigasi ke diri sendiri
+        val bundle = Bundle().apply { putString("userId", userId) }
+        val actionId = if (isOwnProfile) R.id.action_profileSelf_to_profile
+        else R.id.action_profile_to_profile
+        try {
+            findNavController().navigate(actionId, bundle)
+        } catch (e: Exception) {
+            Toast.makeText(context, "Tidak bisa membuka profil", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun openImageViewer(urls: List<String>, startIndex: Int) {
         val bundle = Bundle().apply {
             putStringArray("urls", urls.toTypedArray())
@@ -462,6 +498,20 @@ class ProfileFragment : Fragment() {
                 Toast.makeText(context, "Tidak bisa membuka gambar", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun confirmDelete(post: Post) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Hapus Post")
+            .setMessage("Yakin ingin menghapus post ini?")
+            .setPositiveButton("Hapus") { _, _ ->
+                feedViewModel.deletePost(post.id)
+                // Hapus juga dari list profil secara lokal
+                val updated = postAdapter.currentList.filter { it.id != post.id }
+                postAdapter.submitList(updated)
+            }
+            .setNegativeButton("Batal", null)
+            .show()
     }
 
     override fun onDestroyView() {

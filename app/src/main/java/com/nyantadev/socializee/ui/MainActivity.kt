@@ -18,11 +18,15 @@ import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
+import androidx.lifecycle.lifecycleScope
 import androidx.work.WorkManager
+import com.nyantadev.socializee.repository.AppRepository
+import kotlinx.coroutines.launch
 import com.nyantadev.socializee.R
 import com.nyantadev.socializee.api.RetrofitClient
 import com.nyantadev.socializee.databinding.ActivityMainBinding
 import com.nyantadev.socializee.utils.SessionManager
+import com.google.firebase.messaging.FirebaseMessaging
 import com.nyantadev.socializee.worker.UpdateCheckWorker
 import java.util.concurrent.TimeUnit
 
@@ -83,6 +87,9 @@ class MainActivity : AppCompatActivity() {
 
         // Cek & minta izin setelah UI siap
         checkAndRequestPermissions()
+
+        // Daftarkan FCM token ke backend
+        registerFcmToken()
     }
 
     // ── Permission helpers ────────────────────────────────────────────────────
@@ -197,14 +204,44 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    // ── FCM Token ─────────────────────────────────────────────────────────────
+
+    private fun registerFcmToken() {
+        FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+            val repo = AppRepository(RetrofitClient.getApiService())
+            lifecycleScope.launch {
+                try {
+                    repo.registerDeviceToken(token)
+                } catch (e: Exception) {
+                    // Silent — akan retry saat app dibuka lagi
+                }
+            }
+        }
+    }
+
     // ── Logout ────────────────────────────────────────────────────────────────
 
     fun logout() {
         WorkManager.getInstance(this).cancelUniqueWork("socializee_update_check")
-        sessionManager.logout()
-        startActivity(Intent(this, AuthActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        })
-        finish()
+
+        // Hapus FCM token dari backend agar tidak dapat notif setelah logout
+        FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+            val repo = AppRepository(RetrofitClient.getApiService())
+            lifecycleScope.launch {
+                try { repo.removeDeviceToken(token) } catch (e: Exception) { }
+                sessionManager.logout()
+                startActivity(Intent(this@MainActivity, AuthActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                })
+                finish()
+            }
+        }.addOnFailureListener {
+            sessionManager.logout()
+            startActivity(Intent(this, AuthActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            })
+            finish()
+        }
+        return  // return early, lanjut di callback
     }
 }

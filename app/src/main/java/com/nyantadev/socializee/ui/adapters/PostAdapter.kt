@@ -20,6 +20,7 @@ class PostAdapter(
     private val currentUserId: String,
     private val onLike: (Post, Int) -> Unit,
     private val onComment: (Post) -> Unit,
+    private val onRepost: (Post) -> Unit,           // ← BARU
     private val onUserClick: (String) -> Unit,
     private val onDelete: (Post, Int) -> Unit,
     private val onImageClick: (List<String>, Int) -> Unit
@@ -33,21 +34,31 @@ class PostAdapter(
     inner class PostViewHolder(val binding: ItemPostBinding) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(post: Post, position: Int) = with(binding) {
-            // User info
-            tvUsername.text = "@${post.username}"
-            tvDisplayName.text = post.displayName.ifBlank { post.username }
-            tvContent.text = post.content
-            tvLikeCount.text = post.likesCount.toString()
-            tvCommentCount.text = post.commentsCount.toString()
 
-            // Avatar
+            // ── Label repost "🔁 Nama merepost" ──────────────────────────────
+            if (post.isRepost && !post.repostedByDisplayName.isNullOrBlank()) {
+                tvRepostLabel.visibility = View.VISIBLE
+                tvRepostLabel.text = "🔁 ${post.repostedByDisplayName} merepost"
+            } else {
+                tvRepostLabel.visibility = View.GONE
+            }
+
+            // ── Info user (penulis konten asli) ───────────────────────────────
+            tvUsername.text     = "@${post.username}"
+            tvDisplayName.text  = post.displayName.ifBlank { post.username }
+            tvContent.text      = post.content
+            tvLikeCount.text    = post.likesCount.toString()
+            tvCommentCount.text = post.commentsCount.toString()
+            tvRepostCount.text  = post.repostsCount.toString()
+
+            // ── Avatar ────────────────────────────────────────────────────────
             Glide.with(root.context)
                 .load(post.avatarUrl.ifBlank { null })
                 .placeholder(R.drawable.ic_default_avatar)
                 .circleCrop()
                 .into(ivAvatar)
 
-            // Like state
+            // ── Like state ────────────────────────────────────────────────────
             ivLike.setImageResource(
                 if (post.isLiked) R.drawable.ic_heart_filled else R.drawable.ic_heart_outline
             )
@@ -55,105 +66,108 @@ class PostAdapter(
                 root.context.getColor(if (post.isLiked) R.color.red_like else R.color.text_secondary)
             )
 
-            // Time
+            // ── Repost state ──────────────────────────────────────────────────
+            ivRepost.setImageResource(
+                if (post.isReposted) R.drawable.ic_repost_filled else R.drawable.ic_repost_outline
+            )
+            ivRepost.setColorFilter(
+                root.context.getColor(if (post.isReposted) R.color.green_repost else R.color.text_secondary)
+            )
+
+            // ── Waktu ─────────────────────────────────────────────────────────
             tvTime.text = formatTime(post.createdAt)
 
-            // Delete button (only own posts)
-            ivDelete.visibility = if (post.userId == currentUserId) View.VISIBLE else View.GONE
+            // ── Tombol hapus: hanya post asli milik sendiri ───────────────────
+            // Baris repost (is_repost = true) tidak bisa dihapus dari sini
+            ivDelete.visibility = if (post.userId == currentUserId && !post.isRepost) View.VISIBLE else View.GONE
 
-            // Images
+            // ── Gambar ────────────────────────────────────────────────────────
             imageContainer.removeAllViews()
             if (post.images.isNotEmpty()) {
                 imageContainer.visibility = View.VISIBLE
                 val sortedImages = post.images.sortedBy { it.order }
-                val urls = sortedImages.map { it.url }
                 buildImageGrid(sortedImages.map { it.url }, position)
             } else {
                 imageContainer.visibility = View.GONE
             }
 
-            // Clicks
-            ivLike.setOnClickListener { onLike(post, position) }
-            ivComment.setOnClickListener { onComment(post) }
-            ivAvatar.setOnClickListener { onUserClick(post.userId) }
+            // ── Klik ──────────────────────────────────────────────────────────
+            ivLike.setOnClickListener        { onLike(post, position) }
+            ivComment.setOnClickListener     { onComment(post) }
+            ivRepost.setOnClickListener      { onRepost(post) }
+            ivAvatar.setOnClickListener      { onUserClick(post.userId) }
             tvDisplayName.setOnClickListener { onUserClick(post.userId) }
-            tvUsername.setOnClickListener { onUserClick(post.userId) }
-            ivDelete.setOnClickListener { onDelete(post, position) }
+            tvUsername.setOnClickListener    { onUserClick(post.userId) }
+            ivDelete.setOnClickListener      { onDelete(post, position) }
         }
 
+        // ── Image grid (sama persis dengan versi asli) ────────────────────────
         private fun buildImageGrid(urls: List<String>, postPosition: Int) = with(binding) {
             imageContainer.removeAllViews()
-            val context = root.context
+            val context  = root.context
             val cornerPx = (12 * context.resources.displayMetrics.density).toInt()
-            val margin = (4 * context.resources.displayMetrics.density).toInt()
+            val margin   = (4  * context.resources.displayMetrics.density).toInt()
 
             when (urls.size) {
                 1 -> {
-                    addImage(urls[0], LinearLayout.LayoutParams.MATCH_PARENT, 700, cornerPx, 0) { i ->
-                        onImageClick(urls, i)
+                    addImage(urls[0], LinearLayout.LayoutParams.MATCH_PARENT, 700, cornerPx, 0) {
+                        onImageClick(urls, 0)
                     }
                 }
                 2 -> {
                     val row = LinearLayout(context).apply {
-                        orientation = LinearLayout.HORIZONTAL
-                        layoutParams = LinearLayout.LayoutParams(
-                            LinearLayout.LayoutParams.MATCH_PARENT, 500
-                        )
+                        orientation  = LinearLayout.HORIZONTAL
+                        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 500)
                     }
                     urls.forEachIndexed { i, url ->
                         val lp = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f).apply {
                             if (i == 0) rightMargin = margin
                         }
-                        val iv = buildImageView(url, lp, cornerPx) { onImageClick(urls, i) }
-                        row.addView(iv)
+                        row.addView(buildImageView(url, lp, cornerPx) { onImageClick(urls, i) })
                     }
                     imageContainer.addView(row)
                 }
                 else -> {
-                    // First image full width
-                    addImage(urls[0], LinearLayout.LayoutParams.MATCH_PARENT, 500, cornerPx, margin) { i ->
+                    addImage(urls[0], LinearLayout.LayoutParams.MATCH_PARENT, 500, cornerPx, margin) {
                         onImageClick(urls, 0)
                     }
-                    // Row of remaining (up to 3 more)
                     val row = LinearLayout(context).apply {
-                        orientation = LinearLayout.HORIZONTAL
-                        layoutParams = LinearLayout.LayoutParams(
-                            LinearLayout.LayoutParams.MATCH_PARENT, 300
-                        )
+                        orientation  = LinearLayout.HORIZONTAL
+                        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 300)
                     }
                     urls.drop(1).take(3).forEachIndexed { i, url ->
                         val lp = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f).apply {
                             if (i > 0) leftMargin = margin
                         }
-                        val iv = buildImageView(url, lp, cornerPx) { onImageClick(urls, i + 1) }
-                        row.addView(iv)
+                        row.addView(buildImageView(url, lp, cornerPx) { onImageClick(urls, i + 1) })
                     }
                     imageContainer.addView(row)
                 }
             }
         }
 
-        private fun addImage(url: String, w: Int, h: Int, corner: Int, bottomMargin: Int, onClick: (Int) -> Unit) {
-            val context = binding.root.context
-            val lp = LinearLayout.LayoutParams(w, h).apply {
-                this.bottomMargin = bottomMargin
-            }
-            val iv = buildImageView(url, lp, corner) { onClick(0) }
-            binding.imageContainer.addView(iv)
+        private fun addImage(url: String, w: Int, h: Int, corner: Int, bottomMargin: Int, onClick: () -> Unit) {
+            val lp = LinearLayout.LayoutParams(w, h).apply { this.bottomMargin = bottomMargin }
+            binding.imageContainer.addView(buildImageView(url, lp, corner, onClick))
         }
 
-        private fun buildImageView(url: String, lp: LinearLayout.LayoutParams, cornerPx: Int, onClick: () -> Unit): ImageView {
+        private fun buildImageView(
+            url: String,
+            lp: LinearLayout.LayoutParams,
+            cornerPx: Int,
+            onClick: () -> Unit
+        ): ImageView {
             val isVideo = isVideoUrl(url)
             return ImageView(binding.root.context).apply {
                 layoutParams = lp
-                scaleType = ImageView.ScaleType.CENTER_CROP
+                scaleType    = ImageView.ScaleType.CENTER_CROP
                 if (isVideo) {
                     Glide.with(context)
                         .asBitmap()
                         .load(url)
                         .apply(
                             com.bumptech.glide.request.RequestOptions()
-                                .frame(1_000_000L) // frame at 1 second (in microseconds)
+                                .frame(1_000_000L)
                                 .centerCrop()
                                 .transform(RoundedCorners(cornerPx))
                         )
@@ -165,7 +179,6 @@ class PostAdapter(
                                 transition: com.bumptech.glide.request.transition.Transition<in android.graphics.Bitmap>?
                             ) {
                                 setImageBitmap(resource)
-                                // Overlay play icon on thumbnail
                                 foreground = androidx.core.content.ContextCompat.getDrawable(
                                     context, android.R.drawable.ic_media_play
                                 )
@@ -174,7 +187,6 @@ class PostAdapter(
                                 setImageDrawable(placeholder)
                             }
                             override fun onLoadFailed(errorDrawable: android.graphics.drawable.Drawable?) {
-                                // Fallback ke placeholder + play icon
                                 setImageResource(R.drawable.ic_image_placeholder)
                                 foreground = androidx.core.content.ContextCompat.getDrawable(
                                     context, android.R.drawable.ic_media_play
@@ -203,17 +215,17 @@ class PostAdapter(
         return try {
             val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
             sdf.timeZone = TimeZone.getTimeZone("UTC")
-            val date = sdf.parse(dateStr) ?: return dateStr
-            val now = Date()
-            val diffMs = now.time - date.time
-            val diffMin = diffMs / 60000
+            val date   = sdf.parse(dateStr) ?: return dateStr
+            val now    = Date()
+            val diffMs   = now.time - date.time
+            val diffMin  = diffMs / 60000
             val diffHour = diffMin / 60
-            val diffDay = diffHour / 24
+            val diffDay  = diffHour / 24
             when {
-                diffMin < 1 -> "baru saja"
-                diffMin < 60 -> "${diffMin}m"
+                diffMin  < 1  -> "baru saja"
+                diffMin  < 60 -> "${diffMin}m"
                 diffHour < 24 -> "${diffHour}j"
-                diffDay < 7 -> "${diffDay}h"
+                diffDay  < 7  -> "${diffDay}h"
                 else -> SimpleDateFormat("d MMM", Locale("id")).format(date)
             }
         } catch (e: Exception) { "" }

@@ -24,75 +24,66 @@ class AppRepository(private val api: ApiService) {
 
     suspend fun updateProfile(displayName: String, bio: String, avatarFile: File?): Response<AuthResponse> {
         val namePart = displayName.toRequestBody("text/plain".toMediaTypeOrNull())
-        val bioPart = bio.toRequestBody("text/plain".toMediaTypeOrNull())
-
+        val bioPart  = bio.toRequestBody("text/plain".toMediaTypeOrNull())
         val avatarPart = avatarFile?.let {
-            // Memastikan nama file yang dikirim punya ekstensi yang benar
-            val ext = it.extension.lowercase()
+            val ext      = it.extension.lowercase()
             val fileName = "avatar_upload.${if (ext.isNotEmpty()) ext else "jpg"}"
-
             MultipartBody.Part.createFormData("avatar", fileName, it.toMediaTypedRequestBody())
         }
         return api.updateProfile(namePart, bioPart, avatarPart)
     }
 
     // ===== POSTS =====
-    suspend fun getFeed(page: Int = 1) = api.getFeed(page)
-
-    suspend fun getExplore(page: Int = 1) = api.getExplore(page)
-
+    suspend fun getFeed(page: Int = 1)                    = api.getFeed(page)
+    suspend fun getExplore(page: Int = 1)                 = api.getExplore(page)
     suspend fun getUserPosts(userId: String, page: Int = 1) = api.getUserPosts(userId, page)
 
     suspend fun createPost(content: String, imageFiles: List<File>): Response<PostResponse> {
-        val contentPart = content.toRequestBody("text/plain".toMediaTypeOrNull())
-
+        val contentPart    = content.toRequestBody("text/plain".toMediaTypeOrNull())
         val videoExtensions = setOf("mp4", "mov", "avi", "mkv", "3gp", "wmv", "flv")
 
         val imageParts = imageFiles
             .filter { it.extension.lowercase() !in videoExtensions }
-            .mapIndexed { index, file ->
-                val ext = file.extension.lowercase()
-                val fileName = "image_$index.${if (ext.isNotEmpty()) ext else "jpg"}"
+            .mapIndexed { i, file ->
+                val ext      = file.extension.lowercase()
+                val fileName = "image_$i.${if (ext.isNotEmpty()) ext else "jpg"}"
                 MultipartBody.Part.createFormData("images", fileName, file.toMediaTypedRequestBody())
             }
 
         val videoParts = imageFiles
             .filter { it.extension.lowercase() in videoExtensions }
-            .mapIndexed { index, file ->
-                val ext = file.extension.lowercase()
-                val fileName = "video_$index.${if (ext.isNotEmpty()) ext else "mp4"}"
+            .mapIndexed { i, file ->
+                val ext      = file.extension.lowercase()
+                val fileName = "video_$i.${if (ext.isNotEmpty()) ext else "mp4"}"
                 MultipartBody.Part.createFormData("videos", fileName, file.toMediaTypedRequestBody())
             }
 
         return api.createPost(contentPart, imageParts, videoParts)
     }
 
-    suspend fun deletePost(id: String) = api.deletePost(id)
-
-    suspend fun toggleLike(postId: String) = api.toggleLike(postId)
-
-    suspend fun getComments(postId: String) = api.getComments(postId)
-
+    suspend fun deletePost(id: String)        = api.deletePost(id)
+    suspend fun toggleLike(postId: String)    = api.toggleLike(postId)
+    suspend fun toggleRepost(postId: String)  = api.toggleRepost(postId)
+    suspend fun getComments(postId: String)   = api.getComments(postId)
     suspend fun addComment(postId: String, content: String) =
         api.addComment(postId, CommentRequest(content))
 
     // ===== USERS =====
-    suspend fun searchUsers(query: String) = api.searchUsers(query)
+    suspend fun searchUsers(query: String)          = api.searchUsers(query)
+    suspend fun getUserProfile(userId: String)      = api.getUserProfile(userId)
+    suspend fun toggleFollow(userId: String)        = api.toggleFollow(userId)
+    suspend fun getFollowers(userId: String)        = api.getFollowers(userId)
+    suspend fun getFollowing(userId: String)        = api.getFollowing(userId)
 
-    suspend fun getUserProfile(userId: String) = api.getUserProfile(userId)
-
-    suspend fun toggleFollow(userId: String) = api.toggleFollow(userId)
-
-    suspend fun getFollowers(userId: String) = api.getFollowers(userId)
-
-    suspend fun getFollowing(userId: String) = api.getFollowing(userId)
+    // ===== NOTIFICATIONS =====
+    suspend fun getNotifications(page: Int = 1)     = api.getNotifications(page)
+    suspend fun getUnreadCount()                    = api.getUnreadCount()
+    suspend fun markAllRead()                       = api.markAllRead()
+    suspend fun markRead(id: String)                = api.markRead(id)
+    suspend fun registerDeviceToken(token: String)  = api.registerDeviceToken(DeviceTokenRequest(token))
+    suspend fun removeDeviceToken(token: String)    = api.removeDeviceToken(DeviceTokenRequest(token))
 
     // ===== HELPER =====
-
-    /**
-     * Mendeteksi MIME type berdasarkan ekstensi file, lalu membuat RequestBody
-     * dengan Content-Type yang benar agar backend multer tidak menolak file.
-     */
     private fun File.toMediaTypedRequestBody(): RequestBody {
         val mimeType = when (extension.lowercase()) {
             "jpg", "jpeg" -> "image/jpeg"

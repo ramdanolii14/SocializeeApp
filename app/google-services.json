@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "607149115291",
+    "project_id": "socializee-280fc",
+    "storage_bucket": "socializee-280fc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:607149115291:android:5bbddb84f09ad7660d033e",
+        "android_client_info": {
+          "package_name": "com.nyantadev.socializee"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB8G1Hiux60IcSKW1YQc75sNttR4XNWNFQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
