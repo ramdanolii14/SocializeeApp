@@ -26,7 +26,6 @@
 
         <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1"/>
 
-        <!-- Titik tiga / more options — selalu visible -->
         <ImageView
             android:id="@+id/ivMoreOptions"
             android:layout_width="44dp"
@@ -80,7 +79,6 @@
                     android:orientation="horizontal"
                     android:layout_marginStart="16dp">
 
-                    <!-- Posts count (tidak clickable) -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -103,7 +101,6 @@
                             android:textColor="@color/text_secondary"/>
                     </LinearLayout>
 
-                    <!-- Followers (clickable) -->
                     <LinearLayout
                         android:id="@+id/layoutFollowers"
                         android:layout_width="0dp"
@@ -131,7 +128,6 @@
                             android:textColor="@color/primary"/>
                     </LinearLayout>
 
-                    <!-- Following (clickable) -->
                     <LinearLayout
                         android:id="@+id/layoutFollowing"
                         android:layout_width="0dp"
@@ -182,6 +178,24 @@
                 android:layout_marginStart="16dp"
                 android:layout_marginEnd="16dp"
                 android:layout_marginTop="2dp"/>
+
+            <!-- Badge banned — hanya terlihat kalau user di-ban, dan hanya untuk admin -->
+            <TextView
+                android:id="@+id/tvBannedBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Dilarang"
+                android:textSize="11sp"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:background="@drawable/bg_banned_badge"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="6dp"
+                android:visibility="gone"/>
 
             <TextView
                 android:id="@+id/tvBio"

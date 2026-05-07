@@ -34,12 +34,15 @@ class AppRepository(private val api: ApiService) {
     }
 
     // ===== POSTS =====
-    suspend fun getFeed(page: Int = 1)                    = api.getFeed(page)
-    suspend fun getExplore(page: Int = 1)                 = api.getExplore(page)
-    suspend fun getUserPosts(userId: String, page: Int = 1) = api.getUserPosts(userId, page)
+
+    // [FIX] Tambah parameter sort agar FeedViewModel bisa kirim mode sorting
+    suspend fun getFeed(page: Int = 1, sort: String = "newest") = api.getFeed(page, sort = sort)
+
+    suspend fun getExplore(page: Int = 1)                        = api.getExplore(page)
+    suspend fun getUserPosts(userId: String, page: Int = 1)      = api.getUserPosts(userId, page)
 
     suspend fun createPost(content: String, imageFiles: List<File>): Response<PostResponse> {
-        val contentPart    = content.toRequestBody("text/plain".toMediaTypeOrNull())
+        val contentPart     = content.toRequestBody("text/plain".toMediaTypeOrNull())
         val videoExtensions = setOf("mp4", "mov", "avi", "mkv", "3gp", "wmv", "flv")
 
         val imageParts = imageFiles
@@ -61,27 +64,33 @@ class AppRepository(private val api: ApiService) {
         return api.createPost(contentPart, imageParts, videoParts)
     }
 
-    suspend fun deletePost(id: String)        = api.deletePost(id)
-    suspend fun toggleLike(postId: String)    = api.toggleLike(postId)
-    suspend fun toggleRepost(postId: String)  = api.toggleRepost(postId)
-    suspend fun getComments(postId: String)   = api.getComments(postId)
+    suspend fun deletePost(id: String)       = api.deletePost(id)
+    suspend fun toggleLike(postId: String)   = api.toggleLike(postId)
+    suspend fun toggleRepost(postId: String) = api.toggleRepost(postId)
+    suspend fun getComments(postId: String)  = api.getComments(postId)
     suspend fun addComment(postId: String, content: String) =
         api.addComment(postId, CommentRequest(content))
 
     // ===== USERS =====
-    suspend fun searchUsers(query: String)          = api.searchUsers(query)
-    suspend fun getUserProfile(userId: String)      = api.getUserProfile(userId)
-    suspend fun toggleFollow(userId: String)        = api.toggleFollow(userId)
-    suspend fun getFollowers(userId: String)        = api.getFollowers(userId)
-    suspend fun getFollowing(userId: String)        = api.getFollowing(userId)
+    suspend fun searchUsers(query: String)     = api.searchUsers(query)
+    suspend fun getUserProfile(userId: String) = api.getUserProfile(userId)
+    suspend fun toggleFollow(userId: String)   = api.toggleFollow(userId)
+    suspend fun getFollowers(userId: String)   = api.getFollowers(userId)
+    suspend fun getFollowing(userId: String)   = api.getFollowing(userId)
 
     // ===== NOTIFICATIONS =====
-    suspend fun getNotifications(page: Int = 1)     = api.getNotifications(page)
-    suspend fun getUnreadCount()                    = api.getUnreadCount()
-    suspend fun markAllRead()                       = api.markAllRead()
-    suspend fun markRead(id: String)                = api.markRead(id)
-    suspend fun registerDeviceToken(token: String)  = api.registerDeviceToken(DeviceTokenRequest(token))
-    suspend fun removeDeviceToken(token: String)    = api.removeDeviceToken(DeviceTokenRequest(token))
+    suspend fun getNotifications(page: Int = 1) = api.getNotifications(page)
+    suspend fun getUnreadCount()                = api.getUnreadCount()
+    suspend fun markAllRead()                   = api.markAllRead()
+    suspend fun markRead(id: String)            = api.markRead(id)
+    suspend fun registerDeviceToken(token: String) =
+        api.registerDeviceToken(DeviceTokenRequest(token))
+    suspend fun removeDeviceToken(token: String) =
+        api.removeDeviceToken(DeviceTokenRequest(token))
+
+    // ===== ADMIN =====
+    suspend fun banUser(userId: String)   = api.banUser(userId)
+    suspend fun unbanUser(userId: String) = api.unbanUser(userId)
 
     // ===== HELPER =====
     private fun File.toMediaTypedRequestBody(): RequestBody {

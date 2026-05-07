@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    res/values-night/colors.xml  — Dark mode overrides
+    Hanya perlu mendeklarasikan warna yang berubah di dark mode.
+    Warna yang tidak dideklarasikan di sini otomatis diambil dari values/colors.xml.
+    Pada Android 12+, Dynamic Color menambahkan lapisan override tambahan di atas ini.
+-->
+<resources>
+    <!-- ── Brand ─────────────────────────────────────────────────────────── -->
+    <color name="primary">#FFFFFF</color>
+    <color name="primary_variant">#DDDDDD</color>
+    <color name="on_primary">#000000</color>
+
+    <!-- ── Background (Dark) ─────────────────────────────────────────────── -->
+    <color name="background">#0F0F0F</color>
+    <color name="surface">#1C1C1E</color>
+    <color name="surface_variant">#2C2C2E</color>
+
+    <!-- ── Text (Dark) ───────────────────────────────────────────────────── -->
+    <color name="text_primary">#F0F0F0</color>
+    <color name="text_secondary">#A0A0A0</color>
+    <color name="text_hint">#606060</color>
+
+
+    <!-- ── UI Elements ────────────────────────────────────────────────────── -->
+    <color name="divider">#2E2E2E</color>
+    <color name="icon_tint">#CCCCCC</color>
+    <color name="icon_default">#888888</color>
+    <color name="search_bg">#2A2A2A</color>
+
+    <!-- ── Interaction (sama di dark mode) ───────────────────────────────── -->
+    <color name="like_active">#F91880</color>
+    <color name="repost_active">#00BA7C</color>
+    <color name="green_repost">#00BA7C</color>
+    <color name="red_like">#FF453A</color>
+
+    <!-- ── Status ─────────────────────────────────────────────────────────── -->
+    <color name="success">#30D158</color>
+    <color name="error">#FF453A</color>
+</resources>

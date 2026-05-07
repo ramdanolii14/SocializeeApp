@@ -103,14 +103,14 @@ class NotificationFragment : Fragment() {
                         )
                     }
                 }
-                "follow" -> {
+                "new_post", "follow" -> {
                     findNavController().navigate(
                         R.id.action_notificationFragment_to_profile,
                         Bundle().apply { putString("userId", notif.actorId) }
                     )
                 }
             }
-        } catch (e: Exception) { /* abaikan */ }
+        } catch (e: Exception) { /* abaikan jika navigasi gagal */ }
     }
 
     override fun onDestroyView() {

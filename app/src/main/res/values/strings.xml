@@ -1,19 +1,160 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Socializee</string>
+
+    <!-- ── Auth ──────────────────────────────────────────────────────────── -->
+    <string name="title_login">Login</string>
+    <string name="title_register">Register</string>
+    <string name="subtitle_login">Welcome Back!</string>
+    <string name="subtitle_register">Create New Account</string>
     <string name="btn_login">Login</string>
     <string name="btn_register">Register</string>
-    <string name="btn_follow">Follow</string>
-    <string name="btn_following">Following</string>
-    <string name="btn_post">Post</string>
-    <string name="hint_search">Find user…</string>
+    <string name="toggle_to_register">Dont have account? Register</string>
+    <string name="toggle_to_login">Have an account? Login</string>
+    <string name="hint_full_name">Full Name</string>
+    <string name="hint_username_or_email">Username or Email</string>
+    <string name="hint_email">Email</string>
+    <string name="hint_password">Password</string>
+    <string name="err_fill_all_fields">Fill all field</string>
+    <string name="err_password_min">Password need 6 character</string>
+
+    <!-- ── Navigation ────────────────────────────────────────────────────── -->
     <string name="label_feed">Home</string>
     <string name="label_explore">Explore</string>
+    <string name="label_notifications">Notification</string>
     <string name="label_profile">Profile</string>
-    <string name="empty_feed">Feed is empty.\nTry following someone!</string>
-    <string name="empty_comments">No comment yet.</string>
-    <string name="error_network">Failed connecting to server.</string>
-    <string name="provider_authority">com.nyantadev.socializee.provider</string>
-    <string name="avatar">Avatar</string>
+
+    <!-- ── Feed ──────────────────────────────────────────────────────────── -->
+    <string name="title_home">Socializee</string>
+    <string name="empty_feed">Empty here.\nFollow people or create your first post!</string>
+    <string name="hint_search">Find people…</string>
+    <string name="no_results">People not found</string>
+
+    <!-- Sort options -->
+    <string name="sort_newest">Latest</string>
+    <string name="sort_trending">Trending</string>
+    <string name="sort_oldest">Terlama</string>
+    <string name="sort_random">Random</string>
+
+    <!-- ── Create Post ───────────────────────────────────────────────────── -->
+    <string name="title_new_thread">New Post</string>
+    <string name="hint_post_content">What are you thinking about?</string>
+    <string name="btn_add_photo">📷 Add photo</string>
+    <string name="btn_post">Posting</string>
+    <string name="msg_post_success">Post successfully uploaded!</string>
+    <string name="err_post_empty">Write something or choose a media</string>
+    <string name="err_media_max">Maksimum 4 media</string>
+    <string name="err_file_too_large">File too fat (maks 50MB): %s</string>
+    <string name="err_file_too_large_simple">File too fat (maks 50MB)</string>
+    <string name="err_process_file">Failed processing the file</string>
+
+    <!-- ── Comments ──────────────────────────────────────────────────────── -->
+    <string name="title_comments">Comment</string>
+    <string name="hint_write_comment">Write Comment…</string>
+    <string name="empty_comments">No comment yet.\nBe the first!</string>
+    <string name="err_load_comments">Failed load the comment!</string>
+    <string name="err_send_comment">Error sending comment</string>
+
+    <!-- ── Profile ───────────────────────────────────────────────────────── -->
+    <string name="title_profile">Profile</string>
+    <string name="label_posts">Post</string>
+    <string name="label_followers">Follower</string>
+    <string name="label_following">Following</string>
+    <string name="btn_follow">Follow</string>
+    <string name="btn_following">Following</string>
+    <string name="btn_edit_profile">Edit Profile</string>
+    <string name="btn_cancel_edit">Cancel</string>
+    <string name="hint_display_name">Display Name</string>
+    <string name="hint_bio">Bio</string>
+    <string name="btn_save_profile">Save change</string>
+    <string name="label_change_photo">Chooes a picture.</string>
+    <string name="badge_banned">Banned</string>
+    <string name="cd_avatar">Avatar</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_more_options">Another options</string>
+    <string name="err_name_empty">Name cannot be empty!</string>
+
+    <!-- ── Settings ──────────────────────────────────────────────────────── -->
+    <string name="title_settings">Settings</string>
+    <string name="setting_dark_mode">Dark Mode</string>
+    <string name="setting_delete_account">Delete account</string>
+    <string name="setting_logout">Logout</string>
+    <string name="coming_soon">under development ⏳</string>
+    <string name="delete_account_coming_soon">This feature are coming soon.</string>
+    <string name="logout_confirm_title">Logout</string>
+    <string name="logout_confirm_message">Are you sure to logout from this account?</string>
+    <string name="btn_yes_logout">Yes, Logout</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_close">Close</string>
+    <string name="btn_ok">OKE</string>
+
+    <!-- ── Notifications ─────────────────────────────────────────────────── -->
+    <string name="title_notifications">Notification</string>
+    <string name="btn_mark_all_read">Mark read</string>
+    <string name="empty_notifications">empty :(</string>
+    <string name="notif_follow">started following you</string>
+    <string name="notif_like">liked your post</string>
+    <string name="notif_comment">commenting on your post</string>
+    <string name="notif_mention">mentioned you in the comment</string>
+    <string name="notif_repost">reposted your post</string>
+    <string name="notif_new_post">post something</string>
+
+    <!-- ── Delete Post ───────────────────────────────────────────────────── -->
+    <string name="title_delete_post">Delete post</string>
+    <string name="msg_delete_post">Are you sure to delete this post? This action can not be change.</string>
+    <string name="btn_delete">Delete</string>
+
+    <!-- ── Follow List ───────────────────────────────────────────────────── -->
+    <string name="title_followers">Followers</string>
+    <string name="title_following">Following</string>
+    <string name="empty_users">Empty</string>
+
+    <!-- ── Image Viewer ──────────────────────────────────────────────────── -->
+    <string name="btn_download">Download</string>
+    <string name="msg_downloading">Downloading…</string>
+    <string name="msg_download_success">Successfully saved to gallery</string>
+    <string name="msg_download_failed">Failed to save</string>
+
+    <!-- ── Media / Post ──────────────────────────────────────────────────── -->
     <string name="post_image">Image post</string>
+    <string name="err_network">Failed to connect to the server.</string>
+    <string name="repost_label">%s merepost</string>
+
+    <!-- ── Permissions ───────────────────────────────────────────────────── -->
+    <string name="permission_title">Need Permission</string>
+    <string name="permission_denied_title">Permission denied</string>
+    <string name="btn_open_settings">Open Settings</string>
+    <string name="btn_later">Later</string>
+    <string name="perm_notifications">• Notifikasi — agar kamu bisa menerima pemberitahuan</string>
+    <string name="perm_images">• Akses Foto — untuk unggah dan lihat gambar</string>
+    <string name="perm_videos">• Akses Video — untuk unggah dan putar video</string>
+    <string name="perm_storage">• Penyimpanan — untuk akses foto &amp; video</string>
+
+    <!-- ── Banned ────────────────────────────────────────────────────────── -->
+    <string name="err_banned">Your account has been banned. Contact developer@nyanpixel.my.id</string>
+
+    <!-- ── Admin ─────────────────────────────────────────────────────────── -->
+    <string name="menu_ban_user">Ban User</string>
+    <string name="menu_unban_user">Unban User</string>
+    <string name="menu_report">Report</string>
+    <string name="menu_block">Block</string>
+    <string name="menu_copy_link">Copy Profile</string>
+    <string name="menu_share_profile">Share Profile</string>
+    <string name="menu_settings">Settings</string>
+    <string name="menu_about">About App</string>
+    <string name="menu_check_update">Check Update</string>
+    <string name="menu_logout">Logout</string>
+
+    <!-- ── Update / About ────────────────────────────────────────────────── -->
+    <string name="update_available_title">🎉 Update Ready!</string>
+    <string name="checking_update">Checking update…</string>
+    <string name="latest_version">You used the latest version!</string>
+    <string name="btn_download_now">Download now</string>
+    <string name="btn_open_github">Open GitHub</string>
+
+    <!-- ── Misc ──────────────────────────────────────────────────────────── -->
+    <string name="provider_authority">com.nyantadev.socializee.provider</string>
+    <string name="link_copied">🔗 Tautan profil disalin!</string>
+    <string name="err_open_browser">Can not open the browser.</string>
+    <string name="failed_process_media">Failed processing the media.</string>
 </resources>

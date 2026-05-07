@@ -1,48 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    res/values/colors.xml  — Light mode (+ Material You seed colors)
+    Pada Android 12+ warna ini dipakai sebagai seed/fallback;
+    Dynamic Color dari wallpaper akan meng-override palette otomatis.
+    Untuk Android < 12, warna ini dipakai langsung.
+-->
 <resources>
-    <!-- Brand -->
+    <!-- ── Brand / Seed ───────────────────────────────────────────────────── -->
+    <!-- Dijadikan seed Material You. Di Android 12+ warna ini menjadi
+         titik awal palette dinamis. -->
     <color name="primary">#000000</color>
     <color name="primary_variant">#222222</color>
     <color name="secondary">#1D9BF0</color>
+    <color name="on_primary">#FFFFFF</color>
 
-    <!-- Background -->
+    <!-- ── Background (Light) ────────────────────────────────────────────── -->
     <color name="background">#F5F5F5</color>
     <color name="surface">#FFFFFF</color>
     <color name="surface_variant">#F8F8F8</color>
 
-    <!-- Text -->
+    <!-- ── Text (Light) ──────────────────────────────────────────────────── -->
     <color name="text_primary">#0F0F0F</color>
     <color name="text_secondary">#6E6E6E</color>
     <color name="text_hint">#ABABAB</color>
 
-    <!-- UI Elements -->
+
+    <!-- ── UI Elements ────────────────────────────────────────────────────── -->
     <color name="divider">#E8E8E8</color>
-    <color name="red_like">#FF3B30</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
     <color name="icon_tint">#333333</color>
+    <color name="icon_default">#757575</color>
     <color name="search_bg">#EFEFEF</color>
 
-    <!-- Status -->
+    <!-- ── Interaction States ─────────────────────────────────────────────── -->
+    <color name="red_like">#FF3B30</color>
+    <color name="like_active">#F91880</color>
+    <color name="repost_active">#00BA7C</color>
+    <color name="green_repost">#00BA7C</color>
+
+    <!-- ── Status ─────────────────────────────────────────────────────────── -->
     <color name="success">#34C759</color>
     <color name="error">#FF3B30</color>
 
-    <!-- Material defaults -->
+    <!-- ── Bottom Nav selector (defined here; selector XML refs these) ─────── -->
+    <!-- Selected = primary, unselected = icon_default -->
+
+    <!-- ── Material defaults (legacy compat) ─────────────────────────────── -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
-
-    <!-- Warna aktif tombol Repost (hijau seperti Twitter/X) -->
-    <color name="repost_active">#00BA7C</color>
-
-    <!-- Alias green_repost — dipakai setColorFilter() di adapter untuk ivRepost aktif -->
-    <color name="green_repost">#00BA7C</color>
-
-    <!-- Warna aktif tombol Like (merah) — pastikan ini sudah ada -->
-    <color name="like_active">#F91880</color>
-
-    <!-- Warna ikon default (abu-abu) — pastikan ini sudah ada -->
-    <color name="icon_default">#757575</color>
 </resources>

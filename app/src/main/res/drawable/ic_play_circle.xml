@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/drawable/ic_play_circle.xml
+     Ukuran kecil & bersih — dipakai sebagai overlay di thumbnail video di feed.
+     Warna putih transparan agar tampak di atas gambar apapun.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="36dp"
+    android:height="36dp"
+    android:viewportWidth="36"
+    android:viewportHeight="36">
+
+    <!-- Lingkaran latar belakang hitam semi-transparan -->
+    <path
+        android:fillColor="#88000000"
+        android:pathData="M18,18m-17,0a17,17 0,1 1,34 0a17,17 0,1 1,-34 0"/>
+
+    <!-- Segitiga play putih -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M14,11.5l11,6.5 -11,6.5z"/>
+</vector>

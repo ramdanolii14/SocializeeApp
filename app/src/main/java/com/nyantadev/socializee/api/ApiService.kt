@@ -27,22 +27,28 @@ interface ApiService {
     ): Response<AuthResponse>
 
     // ======= POSTS =======
+
+    /**
+     * Feed home — mendukung sort:
+     *  newest   (default) | trending | oldest | random
+     */
     @GET("posts/feed")
     suspend fun getFeed(
-        @Query("page") page: Int = 1,
-        @Query("limit") limit: Int = 50
+        @Query("page")  page : Int    = 1,
+        @Query("limit") limit: Int    = 20,
+        @Query("sort")  sort : String = "newest"  // [NEW]
     ): Response<PostsResponse>
 
     @GET("posts/explore")
     suspend fun getExplore(
-        @Query("page") page: Int = 1,
-        @Query("limit") limit: Int = 50
+        @Query("page")  page : Int = 1,
+        @Query("limit") limit: Int = 20
     ): Response<PostsResponse>
 
     @GET("posts/user/{userId}")
     suspend fun getUserPosts(
         @Path("userId") userId: String,
-        @Query("page") page: Int = 1
+        @Query("page")  page  : Int    = 1
     ): Response<PostsResponse>
 
     @Multipart
@@ -90,7 +96,7 @@ interface ApiService {
     // ======= NOTIFICATIONS =======
     @GET("notifications")
     suspend fun getNotifications(
-        @Query("page") page: Int = 1,
+        @Query("page")  page : Int = 1,
         @Query("limit") limit: Int = 30
     ): Response<NotificationsResponse>
 
@@ -109,7 +115,7 @@ interface ApiService {
     @DELETE("notifications/device-token")
     suspend fun removeDeviceToken(@Body request: DeviceTokenRequest): Response<GenericResponse>
 
-    // ======= ADMIN =======  [NEW]
+    // ======= ADMIN =======
     @POST("admin/users/{id}/ban")
     suspend fun banUser(@Path("id") userId: String): Response<GenericResponse>
 

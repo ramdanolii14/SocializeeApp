@@ -6,24 +6,86 @@
     android:layout_height="match_parent"
     android:background="@color/background">
 
+    <!-- ── AppBar: judul + sort chips ──────────────────────────────────────── -->
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/surface"
-        app:elevation="0dp">
+        app:elevation="2dp">
+
+        <!-- Toolbar judul -->
         <androidx.appcompat.widget.Toolbar
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize">
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Socializee"
+                android:text="@string/title_home"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:textColor="@color/text_primary"/>
         </androidx.appcompat.widget.Toolbar>
+
+        <!-- Divider tipis -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:background="@color/divider"/>
+
+        <!-- Sort chips — horizontal scroll agar tidak terpotong -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:background="@color/surface">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupSort"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleSelection="true"
+                app:selectionRequired="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipNewest"
+                    style="@style/SortChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sort_newest"
+                    android:checked="true"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipTrending"
+                    style="@style/SortChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sort_trending"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipOldest"
+                    style="@style/SortChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sort_oldest"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipRandom"
+                    style="@style/SortChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sort_random"/>
+
+            </com.google.android.material.chip.ChipGroup>
+        </HorizontalScrollView>
+
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- ── Feed list ─────────────────────────────────────────────────────── -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
@@ -36,8 +98,10 @@
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:paddingBottom="16dp"/>
+
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
+    <!-- ── Loading ───────────────────────────────────────────────────────── -->
     <ProgressBar
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"
@@ -45,17 +109,19 @@
         android:layout_gravity="center"
         android:visibility="gone"/>
 
+    <!-- ── Empty state ───────────────────────────────────────────────────── -->
     <TextView
         android:id="@+id/tvEmpty"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:text="Belum ada postingan.\nIkuti pengguna lain atau buat post baru!"
+        android:text="@string/empty_feed"
         android:textColor="@color/text_secondary"
         android:textSize="14sp"
         android:gravity="center"
         android:visibility="gone"/>
 
+    <!-- ── FAB buat post ─────────────────────────────────────────────────── -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabNewPost"
         android:layout_width="wrap_content"
@@ -63,6 +129,6 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:src="@drawable/ic_add"
-        app:tint="@color/white"/>
+        app:tint="@color/on_primary"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

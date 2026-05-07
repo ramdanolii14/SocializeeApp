@@ -36,6 +36,8 @@ typealias BannedEvent = Event<String>
 
 class FeedViewModel(private val repo: AppRepository) : ViewModel() {
 
+    enum class SortMode { NEWEST, OLDEST, TRENDING, RANDOM }
+
     private val _feedState = MutableLiveData<FeedState>()
     val feedState: LiveData<FeedState> = _feedState
 
@@ -80,13 +82,14 @@ class FeedViewModel(private val repo: AppRepository) : ViewModel() {
 
     // ── Feed ──────────────────────────────────────────────────────────────────
 
-    fun loadFeed(refresh: Boolean = false) {
+    fun loadFeed(refresh: Boolean = false, sort: SortMode = SortMode.NEWEST) {
         if (refresh) feedPage = 1
         viewModelScope.launch {
             if (feedPage == 1) _feedState.value = FeedState.Loading
             isFeedLoadingMore = true
             try {
-                val res = repo.getFeed(feedPage)
+                val sortParam = sort.name.lowercase()
+                val res = repo.getFeed(feedPage, sortParam)
                 if (checkBanned(res)) return@launch
                 if (res.isSuccessful && res.body()?.success == true) {
                     val newPosts = res.body()!!.posts ?: emptyList()
